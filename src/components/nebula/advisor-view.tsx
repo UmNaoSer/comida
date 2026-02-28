@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Calendar as CalendarIcon, Plus } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -36,20 +36,15 @@ export function AdvisorView() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("todas");
   
-  // States for the "Add Product" form (matching the image)
+  // States for the "Add Product" form
   const [formEstId, setFormEstId] = useState("");
   const [formProdName, setFormProdName] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [formCategory, setFormCategory] = useState("Outros");
 
-  // Establishment Registration State (for the second tab)
+  // Establishment Registration State
   const [newEstName, setNewEstName] = useState("");
-
-  // New Price Entry State (for existing products list)
-  const [selectedStoreId, setSelectedStoreId] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [addingToProductId, setAddingToProductId] = useState<string | null>(null);
 
   // Firestore Data
   const estQuery = useMemoFirebase(() => {
@@ -77,16 +72,23 @@ export function AdvisorView() {
     const store = establishments?.find(e => e.id === formEstId);
     if (!store) return;
 
-    // 1. Create/Update Product
-    const prodId = Math.random().toString(36).substr(2, 9);
-    const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
-    setDocumentNonBlocking(prodRef, {
-      id: prodId,
-      name: formProdName,
-      category: formCategory,
-    }, { merge: true });
+    // Check if product with same name already exists (case insensitive)
+    const existingProduct = products?.find(p => p.name.toLowerCase() === formProdName.trim().toLowerCase());
+    
+    let prodId: string;
+    if (existingProduct) {
+      prodId = existingProduct.id;
+    } else {
+      prodId = Math.random().toString(36).substr(2, 9);
+      const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
+      setDocumentNonBlocking(prodRef, {
+        id: prodId,
+        name: formProdName.trim(),
+        category: formCategory,
+      }, { merge: true });
+    }
 
-    // 2. Create Price Entry
+    // Create Price Entry
     const entryId = Math.random().toString(36).substr(2, 9);
     const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
     setDocumentNonBlocking(entryRef, {
@@ -119,15 +121,46 @@ export function AdvisorView() {
     setNewEstName("");
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    if (!db) return;
-    deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "products", productId));
+  const handleDeleteProductGroup = (productName: string) => {
+    if (!db || !products || !allEntries) return;
+    
+    // Find all IDs associated with this name
+    const relatedProducts = products.filter(p => p.name.toLowerCase() === productName.toLowerCase());
+    const relatedIds = relatedProducts.map(p => p.id);
+
+    // Delete products
+    relatedIds.forEach(id => {
+      deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "products", id));
+    });
+
+    // Delete associated entries
+    const relatedEntries = allEntries.filter(e => relatedIds.includes(e.productId));
+    relatedEntries.forEach(entry => {
+      deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "price_entries", entry.id));
+    });
   };
 
-  const filteredProducts = products?.filter(p => {
+  // GROUPING LOGIC: Group products by name
+  const groupedProducts: any[] = [];
+  const processedNames = new Set<string>();
+
+  const filteredRawProducts = products?.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = filterCategory === "todas" || p.category === filterCategory;
     return matchesSearch && matchesCategory;
+  }) || [];
+
+  filteredRawProducts.forEach(p => {
+    const lowerName = p.name.toLowerCase();
+    if (!processedNames.has(lowerName)) {
+      processedNames.add(lowerName);
+      // Aggregating all IDs for this specific name to gather all entries
+      const relatedIds = products?.filter(prod => prod.name.toLowerCase() === lowerName).map(prod => prod.id) || [];
+      groupedProducts.push({
+        ...p,
+        relatedIds
+      });
+    }
   });
 
   return (
@@ -160,7 +193,7 @@ export function AdvisorView() {
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
-          {/* ADICIONAR PRODUTO Form (Matching Image) */}
+          {/* ADICIONAR PRODUTO Form */}
           <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] p-8 max-w-xl mx-auto shadow-2xl">
             <h3 className="text-xl font-headline font-medium tracking-wide text-indigo-100 mb-8 uppercase">
               Adicionar Produto
@@ -289,21 +322,22 @@ export function AdvisorView() {
 
           {/* Product Cards Grid */}
           <div className="grid grid-cols-1 gap-6">
-            {!filteredProducts || filteredProducts.length === 0 ? (
+            {groupedProducts.length === 0 ? (
               <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black italic">Nenhum sinal de produto encontrado.</p>
               </div>
             ) : (
-              filteredProducts.map((product) => {
-                const productEntries = allEntries?.filter(e => e.productId === product.id) || [];
-                const currentBest = productEntries.length > 0 ? Math.min(...productEntries.map(e => e.price)) : 0;
-                const minHistory = productEntries.length > 0 ? Math.min(...productEntries.map(e => e.price)) : 0;
-                const variation = productEntries.length > 1 ? (Math.max(...productEntries.map(e => e.price)) - currentBest) : 0;
+              groupedProducts.map((product) => {
+                const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
+                const prices = productEntries.map(e => e.price);
+                const currentBest = prices.length > 0 ? Math.min(...prices) : 0;
+                const minHistory = prices.length > 0 ? Math.min(...prices) : 0;
+                const variation = prices.length > 1 ? (Math.max(...prices) - currentBest) : 0;
                 const bestEntryToday = productEntries.length > 0 ? productEntries.reduce((prev, curr) => prev.price < curr.price ? prev : curr) : null;
                 const categoryData = CATEGORIES.find(c => c.name === product.category);
 
                 return (
-                  <Card key={product.id} className="bg-indigo-950/10 border-white/5 rounded-[2rem] overflow-hidden group hover:border-accent/20 transition-all">
+                  <Card key={product.name} className="bg-indigo-950/10 border-white/5 rounded-[2rem] overflow-hidden group hover:border-accent/20 transition-all">
                     <CardContent className="p-8 space-y-8">
                       {/* Top Header */}
                       <div className="flex justify-between items-start">
@@ -321,7 +355,7 @@ export function AdvisorView() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              onClick={() => handleDeleteProduct(product.id)}
+                              onClick={() => handleDeleteProductGroup(product.name)}
                               className="text-muted-foreground hover:text-expense hover:bg-expense/10"
                             >
                               <Trash2 className="h-5 w-5" />
