@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, LayoutPanelLeft, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Trophy, Store, LayoutPanelLeft, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 type Tab = 'produtos' | 'estabelecimentos';
 
@@ -347,30 +348,27 @@ export function AdvisorView() {
               groupedProducts.map((product) => {
                 const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
                 
-                // Find absolute minimum for historical reference
-                const allPrices = productEntries.map(e => e.price);
-                const minHistory = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-                
-                // Logic for "Best Store" based on latest price PER store
+                // Logic for "Best Store": analyze the latest price entry PER store
                 let bestEntryOverall = null;
                 let currentBest = 0;
                 
                 if (productEntries.length > 0) {
-                  // Get the latest entry for each individual store
                   const latestByStore = new Map();
-                  // allEntries is ordered by date DESC, so the first time we see a storeId, it's the latest
+                  // allEntries is ordered by date DESC, so the first time we see a storeId, it's the latest for that store
                   productEntries.forEach(entry => {
                     if (!latestByStore.has(entry.storeId)) {
                       latestByStore.set(entry.storeId, entry);
                     }
                   });
                   
-                  // From these latest entries across all stores, pick the cheapest one
+                  // Pick the store with the absolute minimum price among their latest entries
                   const candidates = Array.from(latestByStore.values());
                   bestEntryOverall = candidates.reduce((min, curr) => curr.price < min.price ? curr : min, candidates[0]);
                   currentBest = bestEntryOverall.price;
                 }
 
+                const allPrices = productEntries.map(e => e.price);
+                const minHistory = allPrices.length > 0 ? Math.min(...allPrices) : 0;
                 const variation = allPrices.length > 1 ? (Math.max(...allPrices) - currentBest) : 0;
                 const categoryData = CATEGORIES.find(c => c.name === product.category);
 
@@ -416,7 +414,7 @@ export function AdvisorView() {
                               <Trophy className="h-6 w-6 text-cyan-400" />
                             </div>
                             <div>
-                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja para Compra</p>
+                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
                               <p className="font-bold text-lg">{bestEntryOverall.storeName}</p>
                             </div>
                           </div>
@@ -424,29 +422,34 @@ export function AdvisorView() {
                         </div>
                       )}
 
-                      <div className="space-y-4 pt-4 border-t border-white/5">
-                        <div className="flex items-center gap-2 mb-2">
-                          <History className="h-4 w-4 text-indigo-400" />
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Coletas</p>
-                        </div>
-                        {productEntries.length === 0 ? (
-                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhuma coleta encontrada.</p>
-                        ) : (
-                          productEntries.map((entry) => (
-                            <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
-                              <div className="flex items-center gap-10">
-                                <span className="font-bold text-indigo-200 w-24 truncate">{entry.storeName}</span>
-                                <span className="text-muted-foreground font-mono text-[10px]">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
-                              </div>
-                              <div className="flex items-center gap-8">
-                                <div className="text-right">
-                                  <p className="font-bold text-income">R$ {entry.price.toFixed(2)}</p>
+                      <Collapsible className="space-y-4 pt-4 border-t border-white/5">
+                        <CollapsibleTrigger className="flex items-center justify-between w-full group/collapsible">
+                          <div className="flex items-center gap-2">
+                            <History className="h-4 w-4 text-indigo-400" />
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Coletas</p>
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-indigo-400 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-4">
+                          {productEntries.length === 0 ? (
+                             <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhuma coleta encontrada.</p>
+                          ) : (
+                            productEntries.map((entry) => (
+                              <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
+                                <div className="flex items-center gap-10">
+                                  <span className="font-bold text-indigo-200 w-24 truncate">{entry.storeName}</span>
+                                  <span className="text-muted-foreground font-mono text-[10px]">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <div className="flex items-center gap-8">
+                                  <div className="text-right">
+                                    <p className="font-bold text-income">R$ {entry.price.toFixed(2)}</p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                            ))
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
                     </CardContent>
                   </Card>
                 );
