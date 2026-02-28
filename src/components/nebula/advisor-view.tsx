@@ -351,17 +351,24 @@ export function AdvisorView() {
                 const allPrices = productEntries.map(e => e.price);
                 const minHistory = allPrices.length > 0 ? Math.min(...allPrices) : 0;
                 
-                // Logic for "Best Store" based on MOST RECENT date only
-                let bestEntryToday = null;
+                // Logic for "Best Store" based on latest price PER store
+                let bestEntryOverall = null;
                 let currentBest = 0;
                 
                 if (productEntries.length > 0) {
-                  // Entries are ordered by date desc in query
-                  const latestDateStr = productEntries[0].date.split('T')[0];
-                  const latestEntries = productEntries.filter(e => e.date.startsWith(latestDateStr));
-                  // Cheapest on that latest date
-                  bestEntryToday = latestEntries.reduce((prev, curr) => prev.price < curr.price ? prev : curr);
-                  currentBest = bestEntryToday.price;
+                  // Get the latest entry for each individual store
+                  const latestByStore = new Map();
+                  // allEntries is ordered by date DESC, so the first time we see a storeId, it's the latest
+                  productEntries.forEach(entry => {
+                    if (!latestByStore.has(entry.storeId)) {
+                      latestByStore.set(entry.storeId, entry);
+                    }
+                  });
+                  
+                  // From these latest entries across all stores, pick the cheapest one
+                  const candidates = Array.from(latestByStore.values());
+                  bestEntryOverall = candidates.reduce((min, curr) => curr.price < min.price ? curr : min, candidates[0]);
+                  currentBest = bestEntryOverall.price;
                 }
 
                 const variation = allPrices.length > 1 ? (Math.max(...allPrices) - currentBest) : 0;
@@ -379,7 +386,7 @@ export function AdvisorView() {
                         </div>
                         <div className="flex gap-4 items-start">
                            <div className="text-right">
-                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Preço Atual</p>
+                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Menor Preço Atual</p>
                               <p className="text-3xl font-black text-cyan-400">R$ {currentBest.toFixed(2)}</p>
                             </div>
                             <button 
@@ -402,18 +409,18 @@ export function AdvisorView() {
                         </div>
                       </div>
 
-                      {bestEntryToday && (
+                      {bestEntryOverall && (
                         <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-5 flex justify-between items-center group/highlight hover:bg-cyan-500/20 transition-all shadow-[0_0_20px_rgba(34,211,238,0.05)]">
                           <div className="flex items-center gap-4">
                             <div className="p-3 bg-cyan-500/20 rounded-xl">
                               <Trophy className="h-6 w-6 text-cyan-400" />
                             </div>
                             <div>
-                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
-                              <p className="font-bold text-lg">{bestEntryToday.storeName}</p>
+                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja para Compra</p>
+                              <p className="font-bold text-lg">{bestEntryOverall.storeName}</p>
                             </div>
                           </div>
-                          <p className="text-2xl font-black text-cyan-400">R$ {bestEntryToday.price.toFixed(2)}</p>
+                          <p className="text-2xl font-black text-cyan-400">R$ {bestEntryOverall.price.toFixed(2)}</p>
                         </div>
                       )}
 
