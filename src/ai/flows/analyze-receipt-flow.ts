@@ -1,0 +1,48 @@
+'use server';
+/**
+ * @fileOverview Fluxo para análise de notas fiscais de supermercado via IA.
+ * Extrai estabelecimento, produtos e preços a partir de uma imagem.
+ */
+
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+
+const ReceiptItemSchema = z.object({
+  name: z.string().describe('Nome do produto conforme aparece na nota.'),
+  price: z.number().describe('Preço unitário ou total do item.'),
+  category: z.enum(['Mercado', 'Hortifruti', 'Carnes', 'Higiene', 'Limpeza', 'Bebidas', 'Eletrônicos', 'Outros']).describe('Categoria do produto.'),
+});
+
+const AnalyzeReceiptInputSchema = z.object({
+  photoDataUri: z.string().describe("Foto da nota fiscal como data URI Base64."),
+});
+export type AnalyzeReceiptInput = z.infer<typeof AnalyzeReceiptInputSchema>;
+
+const AnalyzeReceiptOutputSchema = z.object({
+  establishmentName: z.string().describe('Nome do estabelecimento extraído da nota.'),
+  items: z.array(ReceiptItemSchema).describe('Lista de produtos e preços encontrados.'),
+});
+export type AnalyzeReceiptOutput = z.infer<typeof AnalyzeReceiptOutputSchema>;
+
+const analyzeReceiptPrompt = ai.definePrompt({
+  name: 'analyzeReceiptPrompt',
+  input: { schema: AnalyzeReceiptInputSchema },
+  output: { schema: AnalyzeReceiptOutputSchema },
+  prompt: `Você é um assistente financeiro especializado em leitura de notas fiscais brasileiras.
+Analise a imagem da nota fiscal fornecida e extraia:
+1. O nome do estabelecimento (Supermercado, Loja, etc).
+2. Uma lista de todos os itens comprados, contendo o nome do item e o valor pago.
+3. Classifique cada item em uma das categorias permitidas.
+
+Imagem da Nota: {{media url=photoDataUri}}
+
+Retorne os dados estruturados em JSON conforme o esquema definido.`,
+});
+
+export async function analyzeReceipt(input: AnalyzeReceiptInput): Promise<AnalyzeReceiptOutput> {
+  const { output } = await analyzeReceiptPrompt(input);
+  if (!output) {
+    throw new Error('Não foi possível analisar a nota fiscal.');
+  }
+  return output;
+}

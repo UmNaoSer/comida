@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { 
@@ -9,16 +9,19 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, LayoutPanelLeft, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { Search, Trophy, Store, LayoutPanelLeft, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon, ChevronDown, Camera, Loader2, X } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, query, orderBy } from "firebase/firestore";
+import { collection, doc, query, orderBy, getDocs } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { analyzeReceipt } from "@/ai/flows/analyze-receipt-flow";
+import { toast } from "@/hooks/use-toast";
 
 type Tab = 'produtos' | 'estabelecimentos';
 
@@ -41,6 +44,13 @@ export function AdvisorView() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("todas");
   
+  // Camera & AI State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   // States for the "Add Product" form
   const [formEstId, setFormEstId] = useState("");
   const [formProdName, setFormProdName] = useState("");
@@ -69,6 +79,109 @@ export function AdvisorView() {
     return query(collection(db, "users", GUEST_USER_ID, "price_entries"), orderBy("date", "desc"));
   }, [db]);
   const { data: allEntries } = useCollection(entriesQuery);
+
+  useEffect(() => {
+    if (isCameraOpen) {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+        }
+      };
+      getCameraPermission();
+    } else {
+      if (videoRef.current?.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      }
+    }
+  }, [isCameraOpen]);
+
+  const captureAndAnalyze = async () => {
+    if (!videoRef.current || !canvasRef.current || !db) return;
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const photoDataUri = canvas.toDataURL('image/jpeg');
+    setIsAnalyzing(true);
+
+    try {
+      const result = await analyzeReceipt({ photoDataUri });
+      
+      // 1. Process Establishment
+      let storeId = "";
+      const existingEst = establishments?.find(e => e.name.toLowerCase() === result.establishmentName.toLowerCase());
+      
+      if (existingEst) {
+        storeId = existingEst.id;
+      } else {
+        storeId = Math.random().toString(36).substr(2, 9);
+        const estRef = doc(db, "users", GUEST_USER_ID, "establishments", storeId);
+        setDocumentNonBlocking(estRef, {
+          id: storeId,
+          name: result.establishmentName,
+          type: "Estabelecimento",
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+      }
+
+      // 2. Process Items
+      for (const item of result.items) {
+        const normalizedName = item.name.trim().toLowerCase();
+        const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
+        
+        let prodId: string;
+        if (existingProduct) {
+          prodId = existingProduct.id;
+        } else {
+          prodId = Math.random().toString(36).substr(2, 9);
+          const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
+          setDocumentNonBlocking(prodRef, {
+            id: prodId,
+            name: item.name.trim(),
+            category: item.category,
+          }, { merge: true });
+        }
+
+        const entryId = Math.random().toString(36).substr(2, 9);
+        const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
+        setDocumentNonBlocking(entryRef, {
+          id: entryId,
+          productId: prodId,
+          storeId: storeId,
+          storeName: result.establishmentName,
+          price: item.price,
+          date: new Date().toISOString(),
+        }, { merge: true });
+      }
+
+      toast({
+        title: "Nota Processada",
+        description: `${result.items.length} itens adicionados de ${result.establishmentName}.`,
+      });
+      setIsCameraOpen(false);
+    } catch (error) {
+      console.error("AI Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro na IA",
+        description: "Não foi possível ler a nota. Tente novamente.",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,30 +277,84 @@ export function AdvisorView() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex gap-2 p-1 bg-indigo-950/20 border border-white/5 rounded-xl w-fit">
-        <button
-          onClick={() => setActiveTab('produtos')}
-          className={cn(
-            "px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.2em] transition-all",
-            activeTab === 'produtos' 
-              ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(255,230,120,0.3)]" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2 p-1 bg-indigo-950/20 border border-white/5 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveTab('produtos')}
+            className={cn(
+              "px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.2em] transition-all",
+              activeTab === 'produtos' 
+                ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(255,230,120,0.3)]" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Produtos
+          </button>
+          <button
+            onClick={() => setActiveTab('estabelecimentos')}
+            className={cn(
+              "px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.2em] transition-all",
+              activeTab === 'estabelecimentos' 
+                ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(255,230,120,0.3)]" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Lojas
+          </button>
+        </div>
+
+        <Button 
+          onClick={() => setIsCameraOpen(true)}
+          className="h-12 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20"
         >
-          Produtos
-        </button>
-        <button
-          onClick={() => setActiveTab('estabelecimentos')}
-          className={cn(
-            "px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.2em] transition-all",
-            activeTab === 'estabelecimentos' 
-              ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(255,230,120,0.3)]" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Lojas
-        </button>
+          <Camera className="h-4 w-4" />
+          Notinha
+        </Button>
       </div>
+
+      {isCameraOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95">
+          <button 
+            onClick={() => setIsCameraOpen(false)}
+            className="absolute top-8 right-8 text-white/50 hover:text-white p-2"
+          >
+            <X className="h-8 w-8" />
+          </button>
+
+          <div className="w-full max-w-2xl aspect-[3/4] bg-indigo-950/20 border-2 border-dashed border-white/20 rounded-3xl overflow-hidden relative">
+            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+            <canvas ref={canvasRef} className="hidden" />
+            
+            {isAnalyzing && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+                <Loader2 className="h-12 w-12 text-cyan-400 animate-spin" />
+                <p className="text-cyan-400 font-black uppercase tracking-[0.3em] text-sm animate-pulse">Lendo Nota...</p>
+              </div>
+            )}
+
+            {!hasCameraPermission && hasCameraPermission !== null && (
+               <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
+                  <Alert variant="destructive">
+                    <AlertTitle>Acesso Negado</AlertTitle>
+                    <AlertDescription>Por favor, habilite a câmera nas configurações do navegador.</AlertDescription>
+                  </Alert>
+               </div>
+            )}
+          </div>
+
+          {!isAnalyzing && hasCameraPermission && (
+            <div className="mt-8 flex flex-col items-center gap-4">
+               <button 
+                onClick={captureAndAnalyze}
+                className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center group active:scale-95 transition-all"
+              >
+                <div className="w-16 h-16 rounded-full bg-white group-hover:bg-cyan-400 transition-colors" />
+              </button>
+              <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Tire uma foto clara da nota</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
@@ -348,19 +515,20 @@ export function AdvisorView() {
               groupedProducts.map((product) => {
                 const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
                 
-                // Logic for "Best Store": analyze the latest price entry PER store
+                // Optimized "Best Store" Logic:
+                // For each store, find their MOST RECENT price entry.
+                // Among those most recent entries, pick the one with the lowest price.
                 let bestEntryOverall = null;
                 
                 if (productEntries.length > 0) {
                   const latestByStore = new Map();
-                  // allEntries is already ordered by date DESC from the query
+                  // productEntries is ordered by date DESC from the query (since allEntries is DESC)
                   productEntries.forEach(entry => {
                     if (!latestByStore.has(entry.storeId)) {
                       latestByStore.set(entry.storeId, entry);
                     }
                   });
                   
-                  // Pick the store with the absolute minimum price among their latest entries
                   const candidates = Array.from(latestByStore.values()) as any[];
                   bestEntryOverall = candidates.reduce((min, curr) => curr.price < min.price ? curr : min, candidates[0]);
                 }
@@ -510,3 +678,4 @@ export function AdvisorView() {
     </div>
   );
 }
+
