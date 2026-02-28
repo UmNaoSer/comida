@@ -76,7 +76,6 @@ export function AdvisorView() {
     const store = establishments?.find(e => e.id === formEstId);
     if (!store) return;
 
-    // Normalize product name for grouping
     const normalizedName = formProdName.trim().toLowerCase();
     const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
     
@@ -264,7 +263,7 @@ export function AdvisorView() {
 
               <div className="flex items-center justify-between pt-2">
                 <div className="w-full max-w-[240px] space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Compra</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Coleta</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className="relative cursor-pointer group">
@@ -347,11 +346,25 @@ export function AdvisorView() {
             ) : (
               groupedProducts.map((product) => {
                 const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
-                const prices = productEntries.map(e => e.price);
-                const currentBest = prices.length > 0 ? Math.min(...prices) : 0;
-                const minHistory = prices.length > 0 ? Math.min(...prices) : 0;
-                const variation = prices.length > 1 ? (Math.max(...prices) - currentBest) : 0;
-                const bestEntryToday = productEntries.length > 0 ? productEntries.reduce((prev, curr) => prev.price < curr.price ? prev : curr) : null;
+                
+                // Find absolute minimum for historical reference
+                const allPrices = productEntries.map(e => e.price);
+                const minHistory = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+                
+                // Logic for "Best Store" based on MOST RECENT date only
+                let bestEntryToday = null;
+                let currentBest = 0;
+                
+                if (productEntries.length > 0) {
+                  // Entries are ordered by date desc in query
+                  const latestDateStr = productEntries[0].date.split('T')[0];
+                  const latestEntries = productEntries.filter(e => e.date.startsWith(latestDateStr));
+                  // Cheapest on that latest date
+                  bestEntryToday = latestEntries.reduce((prev, curr) => prev.price < curr.price ? prev : curr);
+                  currentBest = bestEntryToday.price;
+                }
+
+                const variation = allPrices.length > 1 ? (Math.max(...allPrices) - currentBest) : 0;
                 const categoryData = CATEGORIES.find(c => c.name === product.category);
 
                 return (
@@ -366,7 +379,7 @@ export function AdvisorView() {
                         </div>
                         <div className="flex gap-4 items-start">
                            <div className="text-right">
-                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Menor Preço</p>
+                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Preço Atual</p>
                               <p className="text-3xl font-black text-cyan-400">R$ {currentBest.toFixed(2)}</p>
                             </div>
                             <button 
@@ -396,7 +409,7 @@ export function AdvisorView() {
                               <Trophy className="h-6 w-6 text-cyan-400" />
                             </div>
                             <div>
-                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja para Compra</p>
+                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
                               <p className="font-bold text-lg">{bestEntryToday.storeName}</p>
                             </div>
                           </div>
@@ -407,10 +420,10 @@ export function AdvisorView() {
                       <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-2">
                           <History className="h-4 w-4 text-indigo-400" />
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Preços</p>
+                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Coletas</p>
                         </div>
                         {productEntries.length === 0 ? (
-                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhum histórico capturado.</p>
+                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhuma coleta encontrada.</p>
                         ) : (
                           productEntries.map((entry) => (
                             <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
@@ -442,11 +455,11 @@ export function AdvisorView() {
              </div>
             <h3 className="text-xl font-black uppercase tracking-[0.2em] text-accent mb-8 flex items-center gap-3">
               <Plus className="h-6 w-6 glow-accent" />
-              Cadastrar Estabelecimento
+              Cadastrar Loja
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
               <Input
-                placeholder="Ex: Mercado Central, Loja Neo..."
+                placeholder="Ex: Mercado Central..."
                 value={newEstName}
                 onChange={(e) => setNewEstName(e.target.value)}
                 className="bg-white/5 border-white/5 h-16 rounded-2xl focus:border-accent/40 transition-all text-sm font-medium flex-1 px-6"
@@ -472,7 +485,7 @@ export function AdvisorView() {
                     </div>
                     <div>
                       <h4 className="font-bold text-lg tracking-tight">{est.name}</h4>
-                      <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Estabelecimento"}</p>
+                      <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
                     </div>
                   </div>
                   <Zap className="h-5 w-5 text-accent/10 group-hover:text-accent transition-all relative z-10" />
