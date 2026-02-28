@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TransactionType } from "@/lib/types";
-import { PlusCircle, Database } from "lucide-react";
+import { PlusCircle, Database, Cpu, Zap } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -44,31 +44,31 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   };
 
   return (
-    <Card className="nebula-card border-accent/10 overflow-hidden relative">
-      <div className="absolute top-0 right-0 p-4 opacity-5">
-        <Database className="h-12 w-12 text-accent" />
+    <Card className="nebula-card border-accent/10 rounded-[2.5rem] overflow-hidden relative p-4 group">
+      <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
+        <Database className="h-32 w-32 text-accent" />
       </div>
       <CardHeader>
-        <CardTitle className="text-xl font-headline flex items-center gap-2 text-accent">
-          <PlusCircle className="h-5 w-5" />
+        <CardTitle className="text-2xl font-headline font-black flex items-center gap-3 text-accent italic uppercase tracking-tighter">
+          <Cpu className="h-6 w-6 glow-accent" />
           Log Neural Vector
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-[10px] uppercase tracking-widest text-muted-foreground">Descriptor</Label>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid gap-8 sm:grid-cols-2">
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Descriptor</Label>
               <Input
                 id="description"
-                placeholder="Ex: Mainframe Salary, Cafe..."
+                placeholder="Ex: Mainframe Salary, Bio-Fuel..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-background/40 border-white/5 h-11 focus:border-accent/50 transition-colors"
+                className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-sm font-medium"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-[10px] uppercase tracking-widest text-muted-foreground">Magnitude ($)</Label>
+            <div className="space-y-3">
+              <Label htmlFor="amount" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Magnitude (Credits)</Label>
               <Input
                 id="amount"
                 type="number"
@@ -76,43 +76,44 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="bg-background/40 border-white/5 h-11 focus:border-accent/50 transition-colors"
+                className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-sm font-medium"
               />
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 items-end">
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-[10px] uppercase tracking-widest text-muted-foreground">Timestamp</Label>
+          <div className="grid gap-8 sm:grid-cols-2 items-end">
+            <div className="space-y-3">
+              <Label htmlFor="date" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Temporal Offset</Label>
               <Input
                 id="date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="bg-background/40 border-white/5 h-11 focus:border-accent/50 transition-colors"
+                className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-sm font-medium"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Polarity</Label>
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Polarity Type</Label>
               <RadioGroup
                 value={type}
                 onValueChange={(v) => setType(v as TransactionType)}
-                className="flex gap-6 pt-1"
+                className="flex gap-8 pt-1"
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="income" id="income" className="text-income border-income w-5 h-5" />
-                  <Label htmlFor="income" className="text-income font-bold text-xs uppercase tracking-widest cursor-pointer">Income</Label>
+                <div className="flex items-center space-x-3 cursor-pointer group/radio">
+                  <RadioGroupItem value="income" id="income" className="text-income border-income/40 w-5 h-5" />
+                  <Label htmlFor="income" className="text-income font-black text-xs uppercase tracking-[0.2em] cursor-pointer group-hover/radio:text-income/100">Income</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="expense" id="expense" className="text-expense border-expense w-5 h-5" />
-                  <Label htmlFor="expense" className="text-expense font-bold text-xs uppercase tracking-widest cursor-pointer">Expense</Label>
+                <div className="flex items-center space-x-3 cursor-pointer group/radio">
+                  <RadioGroupItem value="expense" id="expense" className="text-expense border-expense/40 w-5 h-5" />
+                  <Label htmlFor="expense" className="text-expense font-black text-xs uppercase tracking-[0.2em] cursor-pointer group-hover/radio:text-expense/100">Expense</Label>
                 </div>
               </RadioGroup>
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-sm uppercase tracking-[0.3em] shadow-lg shadow-accent/10">
-            Submit Vector
+          <Button type="submit" className="w-full h-16 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.4em] shadow-xl shadow-accent/20 rounded-2xl group transition-all">
+            Commit Vector
+            <Zap className="ml-3 h-4 w-4 group-hover:fill-current transition-all" />
           </Button>
         </form>
       </CardContent>

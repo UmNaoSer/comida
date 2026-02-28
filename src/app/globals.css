@@ -23,7 +23,7 @@
     --border: 260 20% 25%;
     --input: 260 20% 25%;
     --ring: 187 71% 59%;
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --income: 131 60% 54%;
     --expense: 0 44% 42%;
@@ -31,30 +31,6 @@
     --chart-1: 187 71% 59%;
     --chart-2: 131 60% 54%;
     --chart-3: 0 44% 42%;
-    --chart-4: 260 25% 38%;
-    --chart-5: 280 50% 60%;
-  }
-
-  .dark {
-    --background: 252 20% 11%;
-    --foreground: 210 20% 98%;
-    --card: 260 25% 18%;
-    --card-foreground: 210 20% 98%;
-    --popover: 252 20% 11%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 260 25% 38%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 260 15% 25%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 260 10% 20%;
-    --muted-foreground: 260 10% 70%;
-    --accent: 187 71% 59%;
-    --accent-foreground: 252 20% 11%;
-    --destructive: 0 44% 42%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 260 20% 25%;
-    --input: 260 20% 25%;
-    --ring: 187 71% 59%;
   }
 }
 
@@ -64,10 +40,32 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(260, 25%, 38%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(187, 71%, 59%, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
+    @apply tracking-tighter font-bold;
   }
+}
+
+.nebula-card {
+  @apply bg-card/40 border-white/5 shadow-2xl backdrop-blur-xl transition-all duration-300;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.nebula-card:hover {
+  @apply border-accent/20;
+}
+
+.glow-accent {
+  filter: drop-shadow(0 0 8px hsl(var(--accent) / 0.4));
+}
+
+.glow-text-accent {
+  text-shadow: 0 0 10px hsl(var(--accent) / 0.5);
 }
 
 .income-text {
@@ -78,14 +76,7 @@
   color: hsl(var(--expense));
 }
 
-.nebula-gradient {
-  background: linear-gradient(135deg, hsl(260 25% 38%) 0%, hsl(252 20% 11%) 100%);
-}
-
-.nebula-card {
-  @apply bg-card/60 border-white/5 shadow-2xl backdrop-blur-xl;
-}
-
-.glow-accent {
-  box-shadow: 0 0 20px -5px hsl(var(--accent) / 0.5);
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.5;
 }
