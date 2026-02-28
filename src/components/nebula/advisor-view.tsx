@@ -76,7 +76,6 @@ export function AdvisorView() {
     const store = establishments?.find(e => e.id === formEstId);
     if (!store) return;
 
-    // Check if product with same name already exists (case insensitive)
     const existingProduct = products?.find(p => p.name.toLowerCase() === formProdName.trim().toLowerCase());
     
     let prodId: string;
@@ -92,7 +91,6 @@ export function AdvisorView() {
       }, { merge: true });
     }
 
-    // Create Price Entry
     const entryId = Math.random().toString(36).substr(2, 9);
     const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
     setDocumentNonBlocking(entryRef, {
@@ -104,7 +102,6 @@ export function AdvisorView() {
       date: formDate.toISOString(),
     }, { merge: true });
 
-    // Reset Form
     setFormProdName("");
     setFormPrice("");
     setFormEstId("");
@@ -208,7 +205,7 @@ export function AdvisorView() {
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Estabelecimento</label>
                   <Select value={formEstId} onValueChange={setFormEstId}>
-                    <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100/60 focus:ring-accent/50 transition-all">
+                    <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
                       <SelectValue placeholder="Selecione o Mercado" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
@@ -266,16 +263,15 @@ export function AdvisorView() {
                   <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Data</label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 justify-start text-left font-normal hover:bg-indigo-900/20 focus:ring-accent/50 transition-all px-4",
-                          !formDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-3 h-4 w-4 text-indigo-400/40" />
-                        {formDate ? format(formDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a Data</span>}
-                      </Button>
+                      <div className="relative cursor-pointer group/date">
+                        <Input
+                          readOnly
+                          value={formDate ? format(formDate, "dd.MM.yyyy") : ""}
+                          placeholder="dd.mm.yyyy"
+                          className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 pr-10 cursor-pointer focus:border-accent/40 transition-all"
+                        />
+                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400/40 group-hover/date:text-accent transition-colors pointer-events-none" />
+                      </div>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 bg-[#1a1b2e] border-indigo-500/20" align="end">
                       <Calendar
@@ -283,7 +279,6 @@ export function AdvisorView() {
                         selected={formDate}
                         onSelect={(date) => date && setFormDate(date)}
                         initialFocus
-                        locale={ptBR}
                       />
                     </PopoverContent>
                   </Popover>
