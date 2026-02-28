@@ -2,14 +2,15 @@
 
 import React, { useState } from "react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, limit } from "firebase/firestore";
 import { SummaryCards } from "@/components/nebula/summary-cards";
 import { TransactionList } from "@/components/nebula/transaction-list";
 import { FlowChart } from "@/components/nebula/flow-chart";
 import { AdvisorView } from "@/components/nebula/advisor-view";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
-import { LayoutDashboard, History, Sparkles, Loader2, Search, User } from "lucide-react";
+import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
@@ -41,6 +42,9 @@ export default function NebulaFinanx() {
   const totalIncome = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const totalBalance = totalIncome - totalExpenses;
+
+  // Recent transactions for the dashboard (limit to 5)
+  const recentTxs = txs.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-headline">
@@ -81,6 +85,31 @@ export default function NebulaFinanx() {
             />
             
             <FlowChart transactions={txs} />
+
+            {/* Últimos Lançamentos Section */}
+            <Card className="bg-indigo-950/10 border-indigo-500/10 rounded-[2rem] overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.05)]">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <CardTitle className="text-lg font-bold tracking-tight">Últimos Lançamentos</CardTitle>
+                <button 
+                  onClick={() => setView('transactions')}
+                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest transition-colors flex items-center gap-1 group"
+                >
+                  Ver Todas
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              </CardHeader>
+              <CardContent>
+                {recentTxs.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <p className="text-[11px] text-indigo-300/40 uppercase tracking-[0.3em] font-medium">Nenhuma atividade recente.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <TransactionList transactions={recentTxs} userId={GUEST_USER_ID} compact />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 

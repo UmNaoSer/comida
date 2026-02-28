@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,9 +15,10 @@ interface TransactionListProps {
   transactions: Transaction[];
   userId: string;
   showAll?: boolean;
+  compact?: boolean;
 }
 
-export function TransactionList({ transactions, userId, showAll = false }: TransactionListProps) {
+export function TransactionList({ transactions, userId, showAll = false, compact = false }: TransactionListProps) {
   const db = useFirestore();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -45,6 +45,42 @@ export function TransactionList({ transactions, userId, showAll = false }: Trans
     const date = new Date(dateStr);
     return format(date, "dd MMM yyyy");
   };
+
+  if (compact) {
+    return (
+      <div className="divide-y divide-white/5 -mx-6">
+        {sortedTransactions.map((tx) => (
+          <div
+            key={tx.id}
+            className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors group"
+          >
+            <div className="flex items-center gap-4">
+              <div
+                className={cn(
+                  "p-2 rounded-xl",
+                  tx.type === 'income' ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
+                )}
+              >
+                {tx.type === 'income' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
+              </div>
+              <div>
+                <p className="font-bold text-sm text-foreground/90">{tx.description}</p>
+                <p className="text-[9px] font-mono text-muted-foreground uppercase">{formatDate(tx.date)}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className={cn(
+                "font-bold text-sm",
+                tx.type === 'income' ? "text-income" : "text-expense"
+              )}>
+                {tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <Card className="nebula-card border-white/5 overflow-hidden">
