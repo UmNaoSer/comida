@@ -104,9 +104,14 @@ export function AdvisorView() {
               </SelectTrigger>
               <SelectContent className="bg-slate-950 border-white/10">
                 <SelectItem value="todas">Todas Categorias</SelectItem>
-                <SelectItem value="bebidas">Bebidas</SelectItem>
+                <SelectItem value="mercado">Mercado</SelectItem>
+                <SelectItem value="hortifruti">Hortifruti</SelectItem>
+                <SelectItem value="carnes">Carnes</SelectItem>
+                <SelectItem value="higiene">Higiene</SelectItem>
                 <SelectItem value="limpeza">Limpeza</SelectItem>
-                <SelectItem value="alimentos">Alimentos</SelectItem>
+                <SelectItem value="bebidas">Bebidas</SelectItem>
+                <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                <SelectItem value="outros">Outros</SelectItem>
               </SelectContent>
             </Select>
           </div>
