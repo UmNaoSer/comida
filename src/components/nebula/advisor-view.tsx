@@ -1,141 +1,200 @@
-import React, { useState, useEffect } from "react";
-import { Transaction } from "@/lib/types";
-import { getFinancialAdvisorInsights, FinancialAdvisorInsightsOutput } from "@/ai/flows/financial-advisor-insights-flow";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Brain, RefreshCw, AlertCircle, TrendingUp, Zap, Cpu } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Search, Trophy, Calendar, Store } from "lucide-react";
 
-interface AdvisorViewProps {
-  transactions: Transaction[];
+type Tab = 'comparador' | 'estabelecimentos';
+
+interface ProductPrice {
+  store: string;
+  date: string;
+  price: number;
+  isMinHist?: boolean;
 }
 
-export function AdvisorView({ transactions }: AdvisorViewProps) {
-  const [insights, setInsights] = useState<FinancialAdvisorInsightsOutput | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchInsights = async () => {
-    if (transactions.length === 0) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getFinancialAdvisorInsights({
-        transactions: transactions.map(t => ({
-          ...t,
-          date: t.date
-        }))
-      });
-      setInsights(result);
-    } catch (err) {
-      console.error(err);
-      setError("COMMUNICATION_LINK_FAILURE: Neural connection unstable.");
-    } finally {
-      setLoading(false);
-    }
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  currentBestPrice: number;
+  minHistoryGlobal: number;
+  totalVariation: number;
+  bestOfferToday: {
+    store: string;
+    price: number;
   };
+  history: ProductPrice[];
+}
 
-  useEffect(() => {
-    if (transactions.length > 0 && !insights) {
-      fetchInsights();
-    }
-  }, [transactions]);
+const MOCK_PRODUCTS: Product[] = [
+  {
+    id: "1",
+    name: "Leite",
+    category: "BEBIDAS",
+    currentBestPrice: 5.00,
+    minHistoryGlobal: 5.00,
+    totalVariation: 0.00,
+    bestOfferToday: {
+      store: "Pezzi",
+      price: 5.00
+    },
+    history: [
+      { store: "Pezzi", date: "27/02", price: 5.00, isMinHist: true }
+    ]
+  }
+];
+
+export function AdvisorView() {
+  const [activeTab, setActiveTab] = useState<Tab>('comparador');
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("todas");
 
   return (
-    <div className="space-y-10 max-w-5xl mx-auto pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-        <div className="space-y-1">
-          <h2 className="text-4xl font-headline font-black flex items-center gap-4 tracking-tighter italic uppercase">
-            <Brain className="text-accent h-10 w-10 glow-accent" />
-            Neural Advisor
-          </h2>
-          <p className="text-muted-foreground text-[10px] uppercase tracking-[0.4em]">Advanced Predictive Analysis Protocol</p>
-        </div>
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={fetchInsights} 
-          disabled={loading || transactions.length === 0}
-          className="border-accent/20 bg-accent/5 hover:bg-accent hover:text-accent-foreground transition-all uppercase text-[10px] font-black tracking-[0.3em] h-12 rounded-2xl px-6 group shadow-lg hover:shadow-accent/20"
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Tabs Selector */}
+      <div className="flex gap-2 p-1 bg-indigo-950/20 border border-white/5 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveTab('comparador')}
+          className={cn(
+            "px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all",
+            activeTab === 'comparador' 
+              ? "bg-accent text-accent-foreground shadow-[0_0_15px_rgba(255,230,120,0.3)]" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
         >
-          <RefreshCw className={cn("h-4 w-4 mr-3 transition-transform duration-500", loading && "animate-spin")} />
-          Sync Neural State
-        </Button>
+          Comparador
+        </button>
+        <button
+          onClick={() => setActiveTab('estabelecimentos')}
+          className={cn(
+            "px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all",
+            activeTab === 'estabelecimentos' 
+              ? "bg-accent text-accent-foreground shadow-[0_0_15px_rgba(255,230,120,0.3)]" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          Estabelecimentos
+        </button>
       </div>
 
-      {transactions.length === 0 ? (
-        <Card className="nebula-card border-dashed border-white/5 py-32 rounded-[3rem]">
-          <CardContent className="flex flex-col items-center justify-center space-y-6">
-            <div className="bg-primary/5 w-24 h-24 rounded-[2.5rem] flex items-center justify-center animate-pulse border border-white/5">
-              <Sparkles className="h-12 w-12 text-accent/40" />
+      {activeTab === 'comparador' ? (
+        <div className="space-y-6">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produto..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-indigo-950/20 border-white/10 h-12 pl-12 rounded-xl focus:border-accent/40 transition-all"
+              />
             </div>
-            <div className="text-center space-y-2">
-              <h3 className="text-2xl font-headline font-black tracking-tight uppercase italic">Insufficient Flux</h3>
-              <p className="text-muted-foreground text-[10px] uppercase tracking-[0.3em] max-w-sm mx-auto leading-relaxed">
-                Log additional transaction vectors to initialize the predictive neural framework.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : loading ? (
-        <div className="grid gap-10">
-          <Skeleton className="h-[280px] w-full rounded-[2.5rem] bg-card/20 border border-white/5" />
-          <Skeleton className="h-[280px] w-full rounded-[2.5rem] bg-card/20 border border-white/5" />
-        </div>
-      ) : error ? (
-        <Card className="nebula-card border-expense/20 bg-expense/5 rounded-[2.5rem]">
-          <CardContent className="p-12 flex flex-col items-center gap-6 text-expense text-center">
-            <div className="p-4 bg-expense/10 rounded-full animate-bounce">
-              <AlertCircle className="h-10 w-10" />
-            </div>
-            <div className="space-y-2">
-              <p className="font-mono text-xs uppercase font-black tracking-[0.3em]">{error}</p>
-              <p className="text-[10px] uppercase opacity-60 tracking-widest">Protocol Override Suggested</p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : insights ? (
-        <div className="grid gap-10">
-          <Card className="nebula-card border-accent/20 relative overflow-hidden group rounded-[2.5rem] p-4">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity rotate-12">
-              <Zap className="h-48 w-48 text-accent" />
-            </div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center gap-4 text-accent text-2xl font-headline font-black italic uppercase">
-                <Cpu className="h-6 w-6 glow-accent" />
-                Pattern Recognition
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <div className="prose prose-invert max-w-none">
-                <p className="text-xl leading-relaxed text-foreground/90 font-medium tracking-tight bg-white/5 p-8 rounded-3xl border border-white/5">
-                  {insights.spendingPatterns}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-full sm:w-64 bg-indigo-950/20 border-white/10 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
+                <SelectValue placeholder="Todas Categorias" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-950 border-white/10">
+                <SelectItem value="todas">Todas Categorias</SelectItem>
+                <SelectItem value="bebidas">Bebidas</SelectItem>
+                <SelectItem value="limpeza">Limpeza</SelectItem>
+                <SelectItem value="alimentos">Alimentos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Card className="nebula-card border-income/20 relative overflow-hidden group rounded-[2.5rem] p-4">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity -rotate-12">
-              <TrendingUp className="h-48 w-48 text-income" />
+          {/* Product Cards */}
+          <div className="space-y-4">
+            {MOCK_PRODUCTS.map((product) => (
+              <Card key={product.id} className="bg-indigo-950/10 border-white/5 rounded-[1.5rem] overflow-hidden">
+                <CardContent className="p-6 space-y-6">
+                  {/* Top Header */}
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-black tracking-[0.2em] bg-white/5 px-3 py-1 rounded text-muted-foreground uppercase">
+                        {product.category}
+                      </span>
+                      <h3 className="text-2xl font-bold tracking-tight">{product.name}</h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Melhor Atual</p>
+                      <p className="text-2xl font-black text-cyan-400">R$ {product.currentBestPrice.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {/* Stats Row */}
+                  <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-6">
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Menor Histórico (Global)</p>
+                      <p className="text-sm font-bold">R$ {product.minHistoryGlobal.toFixed(2)}</p>
+                    </div>
+                    <div className="space-y-1 border-l border-white/5 pl-8">
+                      <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Variação Total</p>
+                      <p className="text-sm font-bold">R$ {product.totalVariation.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {/* Highlight Box */}
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 flex justify-between items-center group hover:bg-cyan-500/20 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-cyan-500/20 rounded-lg">
+                        <Trophy className="h-5 w-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Melhor Oferta Hoje</p>
+                        <p className="font-bold">{product.bestOfferToday.store}</p>
+                      </div>
+                    </div>
+                    <p className="text-xl font-black text-cyan-400">R$ {product.bestOfferToday.price.toFixed(2)}</p>
+                  </div>
+
+                  {/* History Table */}
+                  <div className="space-y-3 pt-2">
+                    {product.history.map((entry, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs py-2 group/entry">
+                        <div className="flex items-center gap-10">
+                          <span className="font-bold text-indigo-400 w-20">{entry.store}</span>
+                          <span className="text-muted-foreground">{entry.date}</span>
+                        </div>
+                        <div className="flex items-center gap-8">
+                          <div className="text-right">
+                            <p className="text-[8px] font-black text-accent uppercase tracking-tighter">Min Hist.</p>
+                            <p className="font-bold text-accent">R$ {product.minHistoryGlobal.toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[8px] font-black text-income uppercase tracking-tighter">Atual</p>
+                            <p className="font-bold text-income">R$ {entry.price.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-indigo-950/10 border-white/5 rounded-2xl p-6 flex items-center gap-4">
+            <div className="p-3 bg-accent/10 rounded-xl">
+              <Store className="h-6 w-6 text-accent" />
             </div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center gap-4 text-income text-2xl font-headline font-black italic uppercase">
-                <Sparkles className="h-6 w-6" />
-                Strategic Directives
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <div className="prose prose-invert max-w-none">
-                <p className="text-xl leading-relaxed text-foreground/90 font-medium tracking-tight bg-white/5 p-8 rounded-3xl border border-white/5">
-                  {insights.financialTips}
-                </p>
-              </div>
-            </CardContent>
+            <div>
+              <h4 className="font-bold">Pezzi</h4>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Estabelecimento Principal</p>
+            </div>
           </Card>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
