@@ -1,5 +1,9 @@
+
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Wallet, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SummaryCardsProps {
@@ -9,6 +13,19 @@ interface SummaryCardsProps {
 }
 
 export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const formatCurrency = (val: number) => {
+    // Durante a renderização do servidor, usamos um formato estável para evitar erros de hidratação.
+    if (!isMounted) return val.toFixed(2);
+    // No cliente, após a montagem, usamos o formato local do usuário.
+    return val.toLocaleString(undefined, { minimumFractionDigits: 2 });
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <Card className="nebula-card border-accent/20 bg-gradient-to-br from-card/80 to-primary/10 rounded-[2rem] relative overflow-hidden group">
@@ -22,7 +39,7 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
           </div>
           <div className="space-y-1">
             <h2 className="text-4xl font-headline font-black tracking-tighter italic glow-text-accent">
-              ${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ${formatCurrency(balance)}
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-[9px] font-mono text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-full">Liquid Magnitude</span>
@@ -41,7 +58,7 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
           </div>
           <div className="space-y-1">
             <h2 className="text-4xl font-headline font-black text-income tracking-tighter italic">
-              +${income.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              +${formatCurrency(income)}
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-[9px] font-mono text-income/60 uppercase tracking-widest">Inbound Vector</span>
@@ -60,7 +77,7 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
           </div>
           <div className="space-y-1">
             <h2 className="text-4xl font-headline font-black text-expense tracking-tighter italic">
-              -${expenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              -${formatCurrency(expenses)}
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-[9px] font-mono text-expense/60 uppercase tracking-widest">Outbound Vector</span>

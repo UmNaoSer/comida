@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -45,6 +46,7 @@
       radial-gradient(at 100% 100%, hsla(187, 71%, 59%, 0.05) 0px, transparent 50%);
     background-attachment: fixed;
   }
+  
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
     @apply tracking-tighter font-bold;

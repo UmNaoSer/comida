@@ -1,3 +1,7 @@
+
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { Transaction } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
@@ -16,6 +20,11 @@ interface TransactionListProps {
 
 export function TransactionList({ transactions, userId, showAll = false }: TransactionListProps) {
   const db = useFirestore();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const sortedTransactions = [...transactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -25,6 +34,16 @@ export function TransactionList({ transactions, userId, showAll = false }: Trans
     if (!db) return;
     const txRef = doc(db, "users", userId, "transactions", txId);
     deleteDocumentNonBlocking(txRef);
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (!isMounted) return amount.toFixed(2);
+    return amount.toLocaleString(undefined, { minimumFractionDigits: 2 });
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return format(date, "dd MMM yyyy");
   };
 
   return (
@@ -62,7 +81,7 @@ export function TransactionList({ transactions, userId, showAll = false }: Trans
                   <div>
                     <p className="font-bold text-foreground/90 tracking-tight">{tx.description}</p>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-[9px] font-mono text-muted-foreground uppercase">{format(new Date(tx.date), "dd MMM yyyy")}</span>
+                      <span className="text-[9px] font-mono text-muted-foreground uppercase">{formatDate(tx.date)}</span>
                       {tx.category && (
                         <>
                           <div className="w-1 h-1 rounded-full bg-white/10" />
@@ -80,7 +99,7 @@ export function TransactionList({ transactions, userId, showAll = false }: Trans
                         tx.type === 'income' ? "text-income" : "text-expense"
                       )}
                     >
-                      {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}
                     </p>
                   </div>
                   <Button 
