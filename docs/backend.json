@@ -4,32 +4,32 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
       "type": "object",
-      "description": "Represents a single financial transaction, either an income or an expense, detailing its amount, type, date, description, and category.",
+      "description": "Represents a single financial transaction, either an income or an expense.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Transaction entity."
+          "description": "Unique identifier for the Transaction."
         },
         "amount": {
           "type": "number",
-          "description": "The monetary value of the transaction. Must be a positive number."
+          "description": "The monetary value of the transaction."
         },
         "type": {
           "type": "string",
-          "description": "The type of transaction, indicating whether it's an income or an expense. Expected values are 'income' or 'expense'."
+          "description": "The type of transaction: 'income' or 'expense'."
         },
         "description": {
           "type": "string",
-          "description": "A brief description or note about the transaction."
+          "description": "A brief description of the transaction."
         },
         "date": {
           "type": "string",
-          "description": "The date and time when the transaction occurred.",
+          "description": "The date and time of the transaction.",
           "format": "date-time"
         },
         "categoryId": {
           "type": "string",
-          "description": "Reference to the Category for this transaction. (Relationship: Category 1:N Transaction)"
+          "description": "Reference to the Category."
         }
       },
       "required": [
@@ -45,15 +45,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Category",
       "type": "object",
-      "description": "Represents a classification for financial transactions, such as 'Groceries', 'Salary', or 'Rent'.",
+      "description": "Represents a classification for financial transactions.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Category entity."
+          "description": "Unique identifier for the Category."
         },
         "name": {
           "type": "string",
-          "description": "The name of the category (e.g., 'Food', 'Salary', 'Transport')."
+          "description": "The name of the category."
         }
       },
       "required": [
@@ -65,23 +65,23 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Establishment",
       "type": "object",
-      "description": "Represents a physical or virtual location where transactions occur or prices are tracked.",
+      "description": "Represents a physical or virtual location where transactions occur.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Establishment entity."
+          "description": "Unique identifier for the Establishment."
         },
         "name": {
           "type": "string",
-          "description": "The name of the establishment (e.g., 'Mainframe Store', 'Neo-Market')."
+          "description": "The name of the establishment."
         },
         "type": {
           "type": "string",
-          "description": "The category or type of establishment."
+          "description": "The type of establishment."
         },
         "createdAt": {
           "type": "string",
-          "description": "The date and time when the establishment was registered.",
+          "description": "Registration date.",
           "format": "date-time"
         }
       },
@@ -98,49 +98,23 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}/categories/{categoryId}",
-        "definition": {
-          "entityName": "Category",
-          "schema": {
-            "$ref": "#/backend/entities/Category"
-          },
-          "description": "Stores financial categories defined by a user.",
-          "params": [
-            { "name": "userId" },
-            { "name": "categoryId" }
-          ]
-        }
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": {
+        "$ref": "#/entities/Category"
       },
-      {
-        "path": "/users/{userId}/transactions/{transactionId}",
-        "definition": {
-          "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/backend/entities/Transaction"
-          },
-          "description": "Stores individual financial transactions for a user.",
-          "params": [
-            { "name": "userId" },
-            { "name": "transactionId" }
-          ]
-        }
+      "description": "Stores financial categories defined by a user."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/Transaction"
       },
-      {
-        "path": "/users/{userId}/establishments/{establishmentId}",
-        "definition": {
-          "entityName": "Establishment",
-          "schema": {
-            "$ref": "#/backend/entities/Establishment"
-          },
-          "description": "Stores establishments registered by a user for price comparison.",
-          "params": [
-            { "name": "userId" },
-            { "name": "establishmentId" }
-          ]
-        }
-      }
-    ]
+      "description": "Stores individual financial transactions for a user."
+    },
+    "/users/{userId}/establishments/{establishmentId}": {
+      "schema": {
+        "$ref": "#/entities/Establishment"
+      },
+      "description": "Stores establishments registered by a user."
+    }
   }
 }
