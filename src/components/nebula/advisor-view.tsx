@@ -350,11 +350,10 @@ export function AdvisorView() {
                 
                 // Logic for "Best Store": analyze the latest price entry PER store
                 let bestEntryOverall = null;
-                let currentBest = 0;
                 
                 if (productEntries.length > 0) {
                   const latestByStore = new Map();
-                  // allEntries is ordered by date DESC, so the first time we see a storeId, it's the latest for that store
+                  // allEntries is already ordered by date DESC from the query
                   productEntries.forEach(entry => {
                     if (!latestByStore.has(entry.storeId)) {
                       latestByStore.set(entry.storeId, entry);
@@ -362,13 +361,13 @@ export function AdvisorView() {
                   });
                   
                   // Pick the store with the absolute minimum price among their latest entries
-                  const candidates = Array.from(latestByStore.values());
+                  const candidates = Array.from(latestByStore.values()) as any[];
                   bestEntryOverall = candidates.reduce((min, curr) => curr.price < min.price ? curr : min, candidates[0]);
-                  currentBest = bestEntryOverall.price;
                 }
 
                 const allPrices = productEntries.map(e => e.price);
                 const minHistory = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+                const currentBest = bestEntryOverall?.price || 0;
                 const variation = allPrices.length > 1 ? (Math.max(...allPrices) - currentBest) : 0;
                 const categoryData = CATEGORIES.find(c => c.name === product.category);
 
@@ -383,13 +382,30 @@ export function AdvisorView() {
                           <h3 className="text-3xl font-bold tracking-tight mt-3">{product.name}</h3>
                         </div>
                         <div className="flex gap-4 items-start">
-                           <div className="text-right">
-                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Menor Preço Atual</p>
-                              <p className="text-3xl font-black text-cyan-400">R$ {currentBest.toFixed(2)}</p>
-                            </div>
+                           {bestEntryOverall ? (
+                             <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl px-6 py-4 flex items-center gap-6 shadow-[0_0_20px_rgba(34,211,238,0.05)]">
+                                <div className="flex items-center gap-4">
+                                  <div className="p-2.5 bg-cyan-500/20 rounded-xl">
+                                    <Trophy className="h-5 w-5 text-cyan-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
+                                    <p className="font-bold text-lg">{bestEntryOverall.storeName}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right border-l border-cyan-500/20 pl-6">
+                                  <p className="text-2xl font-black text-cyan-400">R$ {bestEntryOverall.price.toFixed(2)}</p>
+                                </div>
+                             </div>
+                           ) : (
+                             <div className="text-right">
+                                <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Sem Coletas</p>
+                                <p className="text-3xl font-black text-muted-foreground/20">R$ 0,00</p>
+                              </div>
+                           )}
                             <button 
                               onClick={() => handleDeleteProductGroup(product.name)}
-                              className="text-muted-foreground hover:text-expense transition-colors mt-2"
+                              className="text-muted-foreground hover:text-expense transition-colors mt-4"
                             >
                               <Trash2 className="h-5 w-5" />
                             </button>
@@ -406,21 +422,6 @@ export function AdvisorView() {
                           <p className="text-lg font-bold">R$ {variation.toFixed(2)}</p>
                         </div>
                       </div>
-
-                      {bestEntryOverall && (
-                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-5 flex justify-between items-center group/highlight hover:bg-cyan-500/20 transition-all shadow-[0_0_20px_rgba(34,211,238,0.05)]">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 bg-cyan-500/20 rounded-xl">
-                              <Trophy className="h-6 w-6 text-cyan-400" />
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
-                              <p className="font-bold text-lg">{bestEntryOverall.storeName}</p>
-                            </div>
-                          </div>
-                          <p className="text-2xl font-black text-cyan-400">R$ {bestEntryOverall.price.toFixed(2)}</p>
-                        </div>
-                      )}
 
                       <Collapsible className="space-y-4 pt-4 border-t border-white/5">
                         <CollapsibleTrigger className="flex items-center justify-between w-full group/collapsible">
