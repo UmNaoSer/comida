@@ -3,8 +3,9 @@ import { Transaction } from "@/lib/types";
 import { getFinancialAdvisorInsights, FinancialAdvisorInsightsOutput } from "@/ai/flows/financial-advisor-insights-flow";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Brain, RefreshCw, AlertCircle } from "lucide-react";
+import { Sparkles, Brain, RefreshCw, AlertCircle, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface AdvisorViewProps {
   transactions: Transaction[];
@@ -125,5 +126,3 @@ export function AdvisorView({ transactions }: AdvisorViewProps) {
     </div>
   );
 }
-
-import { cn } from "@/lib/utils";
