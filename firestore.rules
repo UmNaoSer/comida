@@ -4,24 +4,8 @@ service cloud.firestore {
 
     /**
      * NEBULA FINANCE SECURITY RULES (PUBLIC ACCESS PROTOCOL)
-     *
-     * In this prototype, authentication has been removed.
-     * Access is granted to all users to facilitate rapid testing and direct usage.
      */
 
-    // --- Helper Functions ---
-
-    /** @description Validates that the internal 'id' field of the document matches the path wildcard. */
-    function matchesPathId(fieldId) {
-      return request.resource.data.id == fieldId;
-    }
-
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for categories, transactions, and establishments.
-     * Allows public access to the specific guest path.
-     */
     match /users/{userId}/categories/{categoryId} {
       allow read, write: if true;
     }
@@ -34,7 +18,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // Global Deny: Default to no access for any path not explicitly defined above.
+    match /users/{userId}/products/{productId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId}/price_entries/{entryId} {
+      allow read, write: if true;
+    }
+
     match /{path=**} {
       allow read, write: if false;
     }

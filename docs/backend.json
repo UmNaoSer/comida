@@ -89,6 +89,33 @@
         "id",
         "name"
       ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product being tracked for price comparison.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "name", "category"]
+    },
+    "PriceEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PriceEntry",
+      "type": "object",
+      "description": "A specific price observation for a product at a store.",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "storeId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "price": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "productId", "storeId", "storeName", "price", "date"]
     }
   },
   "auth": {
@@ -115,6 +142,18 @@
         "$ref": "#/entities/Establishment"
       },
       "description": "Stores establishments registered by a user."
+    },
+    "/users/{userId}/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "Stores products for price tracking."
+    },
+    "/users/{userId}/price_entries/{entryId}": {
+      "schema": {
+        "$ref": "#/entities/PriceEntry"
+      },
+      "description": "Stores price entries for products at specific establishments."
     }
   }
 }
