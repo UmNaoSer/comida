@@ -10,14 +10,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Calendar as CalendarIcon, Plus } from "lucide-react";
+import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Plus } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 type Tab = 'produtos' | 'estabelecimentos';
 
@@ -44,7 +40,6 @@ export function AdvisorView() {
   const [formEstId, setFormEstId] = useState("");
   const [formProdName, setFormProdName] = useState("");
   const [formPrice, setFormPrice] = useState("");
-  const [formDate, setFormDate] = useState<Date>(new Date());
   const [formCategory, setFormCategory] = useState("Outros");
 
   // Establishment Registration State
@@ -99,14 +94,13 @@ export function AdvisorView() {
       storeId: store.id,
       storeName: store.name,
       price: parseFloat(formPrice),
-      date: formDate.toISOString(),
+      date: new Date().toISOString(),
     }, { merge: true });
 
     setFormProdName("");
     setFormPrice("");
     setFormEstId("");
     setFormCategory("Outros");
-    setFormDate(new Date());
   };
 
   const handleAddEstablishment = (e: React.FormEvent) => {
@@ -230,7 +224,7 @@ export function AdvisorView() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Preço (R$)</label>
                   <Input
@@ -258,31 +252,6 @@ export function AdvisorView() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Data</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div className="relative cursor-pointer group/date">
-                        <Input
-                          readOnly
-                          value={formDate ? format(formDate, "dd.MM.yyyy") : ""}
-                          placeholder="dd.mm.yyyy"
-                          className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 pr-10 cursor-pointer focus:border-accent/40 transition-all"
-                        />
-                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400/40 group-hover/date:text-accent transition-colors pointer-events-none" />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-[#1a1b2e] border-indigo-500/20" align="end">
-                      <Calendar
-                        mode="single"
-                        selected={formDate}
-                        onSelect={(date) => date && setFormDate(date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -293,7 +262,6 @@ export function AdvisorView() {
                     setFormProdName("");
                     setFormPrice("");
                     setFormEstId("");
-                    setFormDate(new Date());
                   }}
                   className="h-12 px-6 rounded-xl bg-indigo-900/10 hover:bg-indigo-900/20 text-indigo-300 text-xs font-bold uppercase tracking-widest transition-all"
                 >
