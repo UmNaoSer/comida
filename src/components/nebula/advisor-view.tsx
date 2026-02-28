@@ -8,10 +8,16 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Calendar, Store } from "lucide-react";
+import { Search, Trophy, Store, Plus, Cpu, Zap } from "lucide-react";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 type Tab = 'comparador' | 'estabelecimentos';
+
+const GUEST_USER_ID = "guest-protocol-v1";
 
 interface ProductPrice {
   store: string;
@@ -53,9 +59,36 @@ const MOCK_PRODUCTS: Product[] = [
 ];
 
 export function AdvisorView() {
+  const db = useFirestore();
   const [activeTab, setActiveTab] = useState<Tab>('comparador');
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todas");
+  const [newEstName, setNewEstName] = useState("");
+
+  const estQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, "users", GUEST_USER_ID, "establishments");
+  }, [db]);
+
+  const { data: establishments, isLoading: isEstLoading } = useCollection(estQuery);
+
+  const handleAddEstablishment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEstName || !db) return;
+
+    const estId = Math.random().toString(36).substr(2, 9);
+    const estRef = doc(db, "users", GUEST_USER_ID, "establishments", estId);
+    
+    const newEst = {
+      id: estId,
+      name: newEstName,
+      type: "Estabelecimento Logged",
+      createdAt: new Date().toISOString(),
+    };
+
+    setDocumentNonBlocking(estRef, newEst, { merge: true });
+    setNewEstName("");
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -188,16 +221,50 @@ export function AdvisorView() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-indigo-950/10 border-white/5 rounded-2xl p-6 flex items-center gap-4">
-            <div className="p-3 bg-accent/10 rounded-xl">
-              <Store className="h-6 w-6 text-accent" />
-            </div>
-            <div>
-              <h4 className="font-bold">Pezzi</h4>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Estabelecimento Principal</p>
-            </div>
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          {/* Add Establishment Form */}
+          <Card className="nebula-card border-accent/20 rounded-[2rem] p-6">
+            <h3 className="text-lg font-black uppercase tracking-widest text-accent mb-6 flex items-center gap-2">
+              <Cpu className="h-5 w-5 glow-accent" />
+              Register New Point
+            </h3>
+            <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4">
+              <Input
+                placeholder="Ex: Mainframe Store, Neo-Market..."
+                value={newEstName}
+                onChange={(e) => setNewEstName(e.target.value)}
+                className="bg-white/5 border-white/5 h-14 rounded-xl focus:border-accent/40 transition-all text-sm font-medium flex-1"
+              />
+              <Button type="submit" className="h-14 px-8 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-accent/10 group transition-all">
+                Add Node
+                <Plus className="ml-2 h-4 w-4 transition-transform group-hover:rotate-90" />
+              </Button>
+            </form>
           </Card>
+
+          {/* Establishments Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(!establishments || establishments.length === 0) ? (
+              <div className="md:col-span-2 py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black">No neural nodes detected.</p>
+              </div>
+            ) : (
+              establishments.map((est) => (
+                <Card key={est.id} className="bg-indigo-950/10 border-white/5 rounded-2xl p-6 flex items-center justify-between group hover:border-accent/20 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-accent/10 rounded-xl group-hover:bg-accent/20 transition-colors">
+                      <Store className="h-6 w-6 text-accent" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">{est.name}</h4>
+                      <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{est.type || "Estabelecimento"}</p>
+                    </div>
+                  </div>
+                  <Zap className="h-4 w-4 text-accent/20 group-hover:text-accent transition-colors" />
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
