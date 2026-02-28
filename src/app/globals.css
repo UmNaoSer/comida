@@ -1,37 +1,32 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 252 20% 11%;
-    --foreground: 210 20% 98%;
-    --card: 260 25% 18%;
-    --card-foreground: 210 20% 98%;
-    --popover: 252 20% 11%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 260 25% 38%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 260 15% 25%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 260 10% 20%;
-    --muted-foreground: 260 10% 70%;
-    --accent: 187 71% 59%;
-    --accent-foreground: 252 20% 11%;
-    --destructive: 0 44% 42%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 260 20% 25%;
-    --input: 260 20% 25%;
-    --ring: 187 71% 59%;
-    --radius: 1rem;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 255 45% 45%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 10% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 64%;
+    --muted-foreground: 240 5% 64%;
+    --accent: 47 100% 65%;
+    --accent-foreground: 240 10% 4%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 10% 15%;
+    --input: 240 10% 15%;
+    --ring: 47 100% 65%;
+    --radius: 1.25rem;
 
-    --income: 131 60% 54%;
+    --income: 187 71% 59%;
     --expense: 0 44% 42%;
-
-    --chart-1: 187 71% 59%;
-    --chart-2: 131 60% 54%;
-    --chart-3: 0 44% 42%;
   }
 }
 
@@ -41,44 +36,32 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(260, 25%, 38%, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(187, 71%, 59%, 0.05) 0px, transparent 50%);
+    background: radial-gradient(circle at 50% -20%, #1a1a2e 0%, #0a0a0c 100%);
     background-attachment: fixed;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
-    @apply tracking-tighter font-bold;
+    @apply tracking-tight font-bold;
   }
 }
 
 .nebula-card {
-  @apply bg-card/40 border-white/5 shadow-2xl backdrop-blur-xl transition-all duration-300;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-}
-
-.nebula-card:hover {
-  @apply border-accent/20;
+  @apply bg-card/60 border-white/5 shadow-2xl backdrop-blur-md;
 }
 
 .glow-accent {
   filter: drop-shadow(0 0 8px hsl(var(--accent) / 0.4));
 }
 
-.glow-text-accent {
-  text-shadow: 0 0 10px hsl(var(--accent) / 0.5);
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
 }
 
-.income-text {
-  color: hsl(var(--income));
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-white/5 rounded-full;
 }
 
-.expense-text {
-  color: hsl(var(--expense));
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.5;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-accent rounded-full;
 }

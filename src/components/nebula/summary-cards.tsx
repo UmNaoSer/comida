@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
+import { Calendar, TrendingUp, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SummaryCardsProps {
@@ -20,68 +19,47 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
   }, []);
 
   const formatCurrency = (val: number) => {
-    // Durante a renderização do servidor, usamos um formato estável para evitar erros de hidratação.
-    if (!isMounted) return val.toFixed(2);
-    // No cliente, após a montagem, usamos o formato local do usuário.
-    return val.toLocaleString(undefined, { minimumFractionDigits: 2 });
+    if (!isMounted) return "0,00";
+    return val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <Card className="nebula-card border-accent/20 bg-gradient-to-br from-card/80 to-primary/10 rounded-[2rem] relative overflow-hidden group">
-        <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
-        <CardContent className="p-8 flex flex-col gap-4 relative z-10">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Neural Net Balance</p>
-            <div className="p-2 bg-accent/10 rounded-xl">
-              <Wallet className="h-4 w-4 text-accent" />
-            </div>
+    <div className="grid gap-6 md:grid-cols-2">
+      {/* Total Card */}
+      <Card className="bg-gradient-to-br from-indigo-900/60 to-blue-900/40 border-white/5 rounded-[2rem] relative overflow-hidden h-48">
+        <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 h-32 w-32 text-white/5 pointer-events-none" />
+        <CardContent className="p-8 flex flex-col justify-between h-full relative z-10">
+          <div className="flex items-center gap-2 text-indigo-200/80">
+            <Calendar className="h-4 w-4" />
+            <p className="text-xs font-bold uppercase tracking-[0.2em]">Total em 2026</p>
           </div>
           <div className="space-y-1">
-            <h2 className="text-4xl font-headline font-black tracking-tighter italic glow-text-accent">
-              ${formatCurrency(balance)}
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-mono text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-full">Liquid Magnitude</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-accent text-lg font-bold">R$</span>
+              <h2 className="text-5xl font-black tracking-tighter">
+                {formatCurrency(balance)}
+              </h2>
             </div>
+            <p className="text-[10px] text-indigo-300/60 uppercase tracking-[0.2em]">Soma de todos os lançamentos</p>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="nebula-card border-income/20 bg-gradient-to-br from-card/80 to-income/5 rounded-[2rem] relative overflow-hidden group">
-        <CardContent className="p-8 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Positive Flux</p>
-            <div className="p-2 bg-income/10 rounded-xl">
-              <TrendingUp className="h-4 w-4 text-income" />
-            </div>
+      {/* Media Card */}
+      <Card className="bg-card/40 border-white/5 rounded-[2rem] relative overflow-hidden h-48">
+        <TrendingUp className="absolute right-4 top-1/2 -translate-y-1/2 h-24 w-24 text-white/5 pointer-events-none" />
+        <CardContent className="p-8 flex flex-col justify-between h-full relative z-10">
+          <div className="text-cyan-400">
+            <p className="text-xs font-bold uppercase tracking-[0.2em]">Média Mensal</p>
           </div>
           <div className="space-y-1">
-            <h2 className="text-4xl font-headline font-black text-income tracking-tighter italic">
-              +${formatCurrency(income)}
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-mono text-income/60 uppercase tracking-widest">Inbound Vector</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-cyan-400 text-lg font-bold">R$</span>
+              <h2 className="text-5xl font-black tracking-tighter">
+                {formatCurrency(balance / 12)}
+              </h2>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="nebula-card border-expense/20 bg-gradient-to-br from-card/80 to-expense/5 rounded-[2rem] relative overflow-hidden group">
-        <CardContent className="p-8 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Negative Flux</p>
-            <div className="p-2 bg-expense/10 rounded-xl">
-              <TrendingDown className="h-4 w-4 text-expense" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-4xl font-headline font-black text-expense tracking-tighter italic">
-              -${formatCurrency(expenses)}
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-mono text-expense/60 uppercase tracking-widest">Outbound Vector</span>
-            </div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Baseado em meses com gastos</p>
           </div>
         </CardContent>
       </Card>
