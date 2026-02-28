@@ -26,23 +26,23 @@ export function AuthView() {
             <Sparkles className="h-8 w-8 text-accent-foreground" />
           </div>
           <CardTitle className="text-4xl font-headline font-bold tracking-tight mb-2">Nebula Finanx</CardTitle>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest">Initialization Protocol Required</p>
+          <p className="text-muted-foreground text-sm uppercase tracking-widest">Acesse sua conta</p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Neural Interface ID (Email)</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="identity@nebula.io" 
+                placeholder="exemplo@nebula.io" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-background/50 border-white/10 h-12"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Security Vector (Password)</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input 
                 id="password" 
                 type="password" 
@@ -58,7 +58,7 @@ export function AuthView() {
             className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-lg shadow-xl shadow-accent/20"
             onClick={() => isSignUp ? initiateEmailSignUp(auth, email, password) : initiateEmailSignIn(auth, email, password)}
           >
-            {isSignUp ? 'ESTABLISH LINK' : 'AUTHENTICATE'}
+            {isSignUp ? 'CRIAR CONTA' : 'ENTRAR'}
           </Button>
 
           <div className="relative py-2">
@@ -66,7 +66,7 @@ export function AuthView() {
               <span className="w-full border-t border-white/5" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase tracking-tighter">
-              <span className="bg-card px-2 text-muted-foreground">External Gateway</span>
+              <span className="bg-card px-2 text-muted-foreground">Acesso Rápido</span>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ export function AuthView() {
             className="w-full h-11 border-white/5 hover:bg-white/5 text-muted-foreground"
             onClick={() => initiateAnonymousSignIn(auth)}
           >
-            GUEST OVERRIDE
+            ENTRAR COMO CONVIDADO
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 border-t border-white/5 pt-6">
@@ -84,7 +84,7 @@ export function AuthView() {
             className="text-xs text-accent hover:text-accent/80 transition-colors uppercase tracking-widest flex items-center gap-2"
           >
             <ShieldCheck className="h-4 w-4" />
-            {isSignUp ? 'Switch to Authentication' : 'Create New Neural Link'}
+            {isSignUp ? 'Já tenho uma conta' : 'Criar nova conta'}
           </button>
         </CardFooter>
       </Card>

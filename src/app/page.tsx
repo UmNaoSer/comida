@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -10,7 +9,7 @@ import { FlowChart } from "@/components/nebula/flow-chart";
 import { AIInsights } from "@/components/nebula/ai-insights";
 import { AdvisorView } from "@/components/nebula/advisor-view";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
-import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight, BrainCircuit } from "lucide-react";
+import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,7 +63,7 @@ export default function NebulaFinanx() {
           <Sparkles className="h-6 w-6 text-accent" />
           <div className="flex flex-col">
             <h1 className="text-xl font-bold tracking-widest uppercase">Nebula</h1>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] -mt-1">Inteligência Financeira</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] -mt-1">Gestão Financeira</span>
           </div>
         </div>
         
@@ -81,7 +80,7 @@ export default function NebulaFinanx() {
                   <LayoutDashboard className="h-4 w-4 text-accent" />
                   <h2 className="text-2xl font-bold uppercase tracking-tight">Dashboard</h2>
                 </div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em]">Visão Analítica</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em]">Visão Geral</p>
               </div>
               <div className="bg-accent/10 border border-accent/20 px-4 py-1.5 rounded-lg">
                 <span className="text-accent font-bold text-sm tracking-widest">2026</span>
@@ -128,8 +127,8 @@ export default function NebulaFinanx() {
         {view === 'transactions' && (
           <div className="space-y-10 animate-in fade-in duration-500">
             <div className="space-y-1">
-              <h2 className="text-3xl font-bold uppercase tracking-tight italic">Audit Logs</h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Histórico de Vetores Neurais</p>
+              <h2 className="text-3xl font-bold uppercase tracking-tight italic">Finanças</h2>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Histórico de Transações</p>
             </div>
             
             <AddTransactionForm userId={GUEST_USER_ID} />
@@ -137,7 +136,7 @@ export default function NebulaFinanx() {
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-accent transition-colors" />
               <Input 
-                placeholder="Pesquisar transações por descrição ou categoria..."
+                placeholder="Pesquisar por descrição ou categoria..."
                 value={txSearch}
                 onChange={(e) => setTxSearch(e.target.value)}
                 className="bg-white/5 border-white/5 h-14 pl-12 rounded-2xl focus:border-accent/40 focus:bg-white/[0.08] transition-all text-sm"
@@ -162,19 +161,19 @@ export default function NebulaFinanx() {
             active={view === 'dashboard'} 
             onClick={() => setView('dashboard')}
             icon={<LayoutDashboard />}
-            label="Visão Geral"
+            label="Home"
           />
           <NavButton 
             active={view === 'transactions'} 
             onClick={() => setView('transactions')}
             icon={<History />}
-            label="Finanças"
+            label="Extrato"
           />
           <NavButton 
             active={view === 'advisor'} 
             onClick={() => setView('advisor')}
             icon={<Search />}
-            label="Consultor"
+            label="Preços"
           />
         </div>
       </nav>

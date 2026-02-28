@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Trophy, Store, LayoutPanelLeft, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -119,7 +119,7 @@ export function AdvisorView() {
     setDocumentNonBlocking(estRef, {
       id: estId,
       name: newEstName,
-      type: "Estabelecimento Logado",
+      type: "Estabelecimento",
       createdAt: new Date().toISOString(),
     }, { merge: true });
     setNewEstName("");
@@ -185,7 +185,7 @@ export function AdvisorView() {
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          Estabelecimentos
+          Lojas
         </button>
       </div>
 
@@ -193,7 +193,7 @@ export function AdvisorView() {
         <div className="space-y-8">
           <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2.5rem] p-6 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.02]">
-              <Cpu className="h-32 w-32 text-accent" />
+              <LayoutPanelLeft className="h-32 w-32 text-accent" />
             </div>
             
             <div className="flex items-center justify-between mb-8">
@@ -209,14 +209,14 @@ export function AdvisorView() {
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Estabelecimento</label>
                   <Select value={formEstId} onValueChange={setFormEstId}>
                     <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
-                      <SelectValue placeholder="Selecione o Mercado" />
+                      <SelectValue placeholder="Selecione a Loja" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
                       {establishments?.map(est => (
                         <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
                       ))}
                       {(!establishments || establishments.length === 0) && (
-                        <SelectItem value="none" disabled>Nenhum estabelecimento cadastrado</SelectItem>
+                        <SelectItem value="none" disabled>Nenhuma loja cadastrada</SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -225,7 +225,7 @@ export function AdvisorView() {
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Produto</label>
                   <Input
-                    placeholder="Ex: Leite Integral"
+                    placeholder="Ex: Arroz 5kg"
                     value={formProdName}
                     onChange={(e) => setFormProdName(e.target.value)}
                     className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 placeholder:text-indigo-100/20 focus:border-accent/40 transition-all"
@@ -264,7 +264,7 @@ export function AdvisorView() {
 
               <div className="flex items-center justify-between pt-2">
                 <div className="w-full max-w-[240px] space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Coleta</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Compra</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className="relative cursor-pointer group">
@@ -342,7 +342,7 @@ export function AdvisorView() {
           <div className="grid grid-cols-1 gap-6">
             {groupedProducts.length === 0 ? (
               <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black italic">Nenhum sinal de produto encontrado.</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black italic">Nenhum produto encontrado.</p>
               </div>
             ) : (
               groupedProducts.map((product) => {
@@ -366,7 +366,7 @@ export function AdvisorView() {
                         </div>
                         <div className="flex gap-4 items-start">
                            <div className="text-right">
-                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">MAGNITUDE ATUAL</p>
+                              <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Menor Preço</p>
                               <p className="text-3xl font-black text-cyan-400">R$ {currentBest.toFixed(2)}</p>
                             </div>
                             <button 
@@ -380,11 +380,11 @@ export function AdvisorView() {
 
                       <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
                         <div className="space-y-2">
-                          <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Menor Histórico (Global)</p>
+                          <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Menor Histórico</p>
                           <p className="text-lg font-bold">R$ {minHistory.toFixed(2)}</p>
                         </div>
                         <div className="space-y-2 border-l border-white/5 pl-8">
-                          <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Variação de Vetor</p>
+                          <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Variação de Preço</p>
                           <p className="text-lg font-bold">R$ {variation.toFixed(2)}</p>
                         </div>
                       </div>
@@ -396,7 +396,7 @@ export function AdvisorView() {
                               <Trophy className="h-6 w-6 text-cyan-400" />
                             </div>
                             <div>
-                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Otimização de Compra</p>
+                              <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja para Compra</p>
                               <p className="font-bold text-lg">{bestEntryToday.storeName}</p>
                             </div>
                           </div>
@@ -407,10 +407,10 @@ export function AdvisorView() {
                       <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-2">
                           <History className="h-4 w-4 text-indigo-400" />
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Feed de Histórico Neural</p>
+                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Preços</p>
                         </div>
                         {productEntries.length === 0 ? (
-                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhum sinal histórico capturado.</p>
+                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhum histórico capturado.</p>
                         ) : (
                           productEntries.map((entry) => (
                             <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
@@ -441,8 +441,8 @@ export function AdvisorView() {
                 <Store className="h-40 w-40 text-accent" />
              </div>
             <h3 className="text-xl font-black uppercase tracking-[0.2em] text-accent mb-8 flex items-center gap-3">
-              <Cpu className="h-6 w-6 glow-accent" />
-              Registrar Novo Nó
+              <Plus className="h-6 w-6 glow-accent" />
+              Cadastrar Estabelecimento
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
               <Input
@@ -452,7 +452,7 @@ export function AdvisorView() {
                 className="bg-white/5 border-white/5 h-16 rounded-2xl focus:border-accent/40 transition-all text-sm font-medium flex-1 px-6"
               />
               <Button type="submit" className="h-16 px-10 bg-accent text-accent-foreground font-black uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-accent/10 group transition-all">
-                Adicionar Nó
+                Adicionar
                 <Plus className="ml-3 h-5 w-5 transition-transform group-hover:rotate-90" />
               </Button>
             </form>
@@ -461,7 +461,7 @@ export function AdvisorView() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(!establishments || establishments.length === 0) ? (
               <div className="md:col-span-2 lg:col-span-3 py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">Nenhum nó neural detectado no setor.</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">Nenhuma loja cadastrada.</p>
               </div>
             ) : (
               establishments.map((est) => (

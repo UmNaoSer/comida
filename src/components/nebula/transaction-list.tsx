@@ -5,7 +5,7 @@ import { Transaction } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUpRight, ArrowDownLeft, Trash2, Cpu } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Trash2, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -87,8 +87,8 @@ export function TransactionList({ transactions, userId, showAll = false, compact
     <Card className="nebula-card border-white/5 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl font-headline flex items-center gap-2">
-          <Cpu className="h-5 w-5 text-primary" />
-          {showAll ? "Todas as Flutuações" : "Sinais Recentes"}
+          <ListChecks className="h-5 w-5 text-primary" />
+          {showAll ? "Todas as Transações" : "Transações Recentes"}
         </CardTitle>
         <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
           Total: {transactions.length}
@@ -98,7 +98,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
         <div className="divide-y divide-white/5">
           {sortedTransactions.length === 0 ? (
             <div className="p-16 text-center text-muted-foreground italic font-mono text-[10px] uppercase tracking-widest">
-              Nenhum sinal detectado no intervalo atual.
+              Nenhuma transação encontrada.
             </div>
           ) : (
             sortedTransactions.map((tx) => (

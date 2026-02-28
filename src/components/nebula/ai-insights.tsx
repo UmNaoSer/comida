@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -31,7 +30,7 @@ export function AIInsights({ transactions }: AIInsightsProps) {
       });
       setInsights(result);
     } catch (error) {
-      console.error("Erro ao invocar o oráculo:", error);
+      console.error("Erro ao gerar insights:", error);
     } finally {
       setLoading(false);
     }
@@ -44,14 +43,14 @@ export function AIInsights({ transactions }: AIInsightsProps) {
       <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
         <CardTitle className="text-xl font-headline font-black flex items-center gap-3 text-accent italic uppercase tracking-tighter">
           <BrainCircuit className="h-6 w-6 glow-accent" />
-          Oráculo de Insights
+          Assistente de IA
         </CardTitle>
         <Button 
           onClick={handleInvokeOracle} 
           disabled={loading || transactions.length === 0}
           className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full h-10 px-6 font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-accent/20 transition-all active:scale-95"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="mr-2 h-4 w-4" /> Invocar Oráculo</>}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="mr-2 h-4 w-4" /> Gerar Insights</>}
         </Button>
       </CardHeader>
 
@@ -60,8 +59,8 @@ export function AIInsights({ transactions }: AIInsightsProps) {
           <div className="py-8 text-center">
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-medium max-w-xs mx-auto">
               {transactions.length > 0 
-                ? "O Oráculo aguarda sua chamada para analisar os vetores financeiros."
-                : "Nenhum sinal detectado para análise neural."}
+                ? "Clique para analisar suas finanças com inteligência artificial."
+                : "Nenhuma transação disponível para análise."}
             </p>
           </div>
         ) : loading ? (
@@ -70,14 +69,14 @@ export function AIInsights({ transactions }: AIInsightsProps) {
               <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full animate-pulse" />
               <Zap className="h-10 w-10 text-accent animate-bounce relative z-10" />
             </div>
-            <p className="text-[10px] text-accent font-black uppercase tracking-[0.4em] animate-pulse">Sincronizando Sinapses...</p>
+            <p className="text-[10px] text-accent font-black uppercase tracking-[0.4em] animate-pulse">Analisando dados...</p>
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
               <div className="flex items-center gap-2 mb-3">
                 <BrainCircuit className="h-4 w-4 text-accent" />
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Padrões de Rede</h4>
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Padrões de Gastos</h4>
               </div>
               <p className="text-sm text-indigo-100/80 leading-relaxed font-medium">{insights?.spendingPatterns}</p>
             </div>
@@ -85,7 +84,7 @@ export function AIInsights({ transactions }: AIInsightsProps) {
             <div className="bg-accent/5 rounded-2xl p-5 border border-accent/10">
               <div className="flex items-center gap-2 mb-3">
                 <Lightbulb className="h-4 w-4 text-accent" />
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Diretrizes do Oráculo</h4>
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-accent">Dicas Financeiras</h4>
               </div>
               <p className="text-sm text-indigo-100/80 leading-relaxed font-medium italic">{insights?.financialTips}</p>
             </div>
