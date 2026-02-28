@@ -14,6 +14,9 @@ import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Calendar
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 type Tab = 'produtos' | 'estabelecimentos';
 
@@ -40,7 +43,7 @@ export function AdvisorView() {
   const [formEstId, setFormEstId] = useState("");
   const [formProdName, setFormProdName] = useState("");
   const [formPrice, setFormPrice] = useState("");
-  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formDate, setFormDate] = useState<Date>(new Date());
   const [formCategory, setFormCategory] = useState("Outros");
 
   // Establishment Registration State
@@ -97,7 +100,7 @@ export function AdvisorView() {
       storeId: store.id,
       storeName: store.name,
       price: parseFloat(formPrice),
-      date: new Date(formDate).toISOString(),
+      date: formDate.toISOString(),
     }, { merge: true });
 
     // Reset Form
@@ -105,6 +108,7 @@ export function AdvisorView() {
     setFormPrice("");
     setFormEstId("");
     setFormCategory("Outros");
+    setFormDate(new Date());
   };
 
   const handleAddEstablishment = (e: React.FormEvent) => {
@@ -124,23 +128,19 @@ export function AdvisorView() {
   const handleDeleteProductGroup = (productName: string) => {
     if (!db || !products || !allEntries) return;
     
-    // Find all IDs associated with this name
     const relatedProducts = products.filter(p => p.name.toLowerCase() === productName.toLowerCase());
     const relatedIds = relatedProducts.map(p => p.id);
 
-    // Delete products
     relatedIds.forEach(id => {
       deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "products", id));
     });
 
-    // Delete associated entries
     const relatedEntries = allEntries.filter(e => relatedIds.includes(e.productId));
     relatedEntries.forEach(entry => {
       deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "price_entries", entry.id));
     });
   };
 
-  // GROUPING LOGIC: Group products by name
   const groupedProducts: any[] = [];
   const processedNames = new Set<string>();
 
@@ -154,7 +154,6 @@ export function AdvisorView() {
     const lowerName = p.name.toLowerCase();
     if (!processedNames.has(lowerName)) {
       processedNames.add(lowerName);
-      // Aggregating all IDs for this specific name to gather all entries
       const relatedIds = products?.filter(prod => prod.name.toLowerCase() === lowerName).map(prod => prod.id) || [];
       groupedProducts.push({
         ...p,
@@ -165,7 +164,6 @@ export function AdvisorView() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Tabs Selector */}
       <div className="flex gap-2 p-1 bg-indigo-950/20 border border-white/5 rounded-xl w-fit">
         <button
           onClick={() => setActiveTab('produtos')}
@@ -193,13 +191,11 @@ export function AdvisorView() {
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
-          {/* ADICIONAR PRODUTO Form */}
           <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] p-8 max-w-xl mx-auto shadow-2xl">
             <h3 className="text-xl font-headline font-medium tracking-wide text-indigo-100 mb-8 uppercase">
               Adicionar Produto
             </h3>
             <form onSubmit={handleSaveProduct} className="space-y-6">
-              {/* ESTABELECIMENTO */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Estabelecimento</label>
                 <Select value={formEstId} onValueChange={setFormEstId}>
@@ -217,7 +213,6 @@ export function AdvisorView() {
                 </Select>
               </div>
 
-              {/* PRODUTO */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Produto</label>
                 <Input
@@ -228,7 +223,6 @@ export function AdvisorView() {
                 />
               </div>
 
-              {/* PREÇO e DATA */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Preço (R$)</label>
@@ -242,19 +236,31 @@ export function AdvisorView() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Data</label>
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      value={formDate}
-                      onChange={(e) => setFormDate(e.target.value)}
-                      className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 focus:border-accent/40 transition-all pr-10"
-                    />
-                    <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400/40 pointer-events-none" />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 justify-start text-left font-normal hover:bg-indigo-900/20 focus:ring-accent/50 transition-all px-4",
+                          !formDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-3 h-4 w-4 text-indigo-400/40" />
+                        {formDate ? format(formDate, "dd/MM/yyyy") : <span>Data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-[#1a1b2e] border-indigo-500/20" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={formDate}
+                        onSelect={(date) => date && setFormDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
-              {/* CATEGORIA */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Categoria</label>
                 <Select value={formCategory} onValueChange={setFormCategory}>
@@ -272,7 +278,6 @@ export function AdvisorView() {
                 </Select>
               </div>
 
-              {/* BUTTONS */}
               <div className="grid grid-cols-2 gap-4 pt-4">
                 <Button 
                   type="button" 
@@ -281,6 +286,7 @@ export function AdvisorView() {
                     setFormProdName("");
                     setFormPrice("");
                     setFormEstId("");
+                    setFormDate(new Date());
                   }}
                   className="h-14 rounded-xl bg-indigo-900/20 hover:bg-indigo-900/40 text-indigo-100 font-headline uppercase tracking-widest text-xs transition-all"
                 >
@@ -296,7 +302,6 @@ export function AdvisorView() {
             </form>
           </Card>
 
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -320,7 +325,6 @@ export function AdvisorView() {
             </Select>
           </div>
 
-          {/* Product Cards Grid */}
           <div className="grid grid-cols-1 gap-6">
             {groupedProducts.length === 0 ? (
               <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
@@ -339,7 +343,6 @@ export function AdvisorView() {
                 return (
                   <Card key={product.name} className="bg-indigo-950/10 border-white/5 rounded-[2rem] overflow-hidden group hover:border-accent/20 transition-all">
                     <CardContent className="p-8 space-y-8">
-                      {/* Top Header */}
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
                           <span className="text-[9px] font-black tracking-[0.2em] bg-accent/10 text-accent px-4 py-1.5 rounded-full uppercase">
@@ -363,7 +366,6 @@ export function AdvisorView() {
                         </div>
                       </div>
 
-                      {/* Stats Row */}
                       <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
                         <div className="space-y-2">
                           <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Menor Histórico (Global)</p>
@@ -375,7 +377,6 @@ export function AdvisorView() {
                         </div>
                       </div>
 
-                      {/* Best Offer Highlight */}
                       {bestEntryToday && (
                         <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-5 flex justify-between items-center group/highlight hover:bg-cyan-500/20 transition-all shadow-[0_0_20px_rgba(34,211,238,0.05)]">
                           <div className="flex items-center gap-4">
@@ -391,7 +392,6 @@ export function AdvisorView() {
                         </div>
                       )}
 
-                      {/* History Feed */}
                       <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-2">
                           <History className="h-4 w-4 text-indigo-400" />
@@ -424,7 +424,6 @@ export function AdvisorView() {
         </div>
       ) : (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-          {/* Add Establishment Form */}
           <Card className="nebula-card border-accent/20 rounded-[2.5rem] p-8 relative overflow-hidden">
              <div className="absolute -right-10 -top-10 opacity-[0.03]">
                 <Store className="h-40 w-40 text-accent" />
@@ -447,7 +446,6 @@ export function AdvisorView() {
             </form>
           </Card>
 
-          {/* Establishments Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(!establishments || establishments.length === 0) ? (
               <div className="md:col-span-2 lg:col-span-3 py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
