@@ -192,57 +192,84 @@ export function AdvisorView() {
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
-          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] p-8 max-w-xl mx-auto shadow-2xl">
-            <h3 className="text-xl font-headline font-medium tracking-wide text-indigo-100 mb-8 uppercase">
-              Adicionar Produto
-            </h3>
-            <form onSubmit={handleSaveProduct} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Estabelecimento</label>
-                <Select value={formEstId} onValueChange={setFormEstId}>
-                  <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100/60 focus:ring-accent/50 transition-all">
-                    <SelectValue placeholder="Nome do Mercado/Loja" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
-                    {establishments?.map(est => (
-                      <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
-                    ))}
-                    {(!establishments || establishments.length === 0) && (
-                      <SelectItem value="none" disabled>Nenhum estabelecimento cadastrado</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] p-6 max-w-4xl mx-auto shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-headline font-medium tracking-wide text-indigo-100 uppercase">
+                Adicionar Produto
+              </h3>
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent/60">
+                <Cpu className="h-4 w-4" />
+                Input de Vetor
+              </div>
+            </div>
+            
+            <form onSubmit={handleSaveProduct} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Estabelecimento</label>
+                  <Select value={formEstId} onValueChange={setFormEstId}>
+                    <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100/60 focus:ring-accent/50 transition-all">
+                      <SelectValue placeholder="Selecione o Mercado" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
+                      {establishments?.map(est => (
+                        <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
+                      ))}
+                      {(!establishments || establishments.length === 0) && (
+                        <SelectItem value="none" disabled>Nenhum estabelecimento cadastrado</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Produto</label>
+                  <Input
+                    placeholder="Ex: Leite Integral 1L"
+                    value={formProdName}
+                    onChange={(e) => setFormProdName(e.target.value)}
+                    className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 placeholder:text-indigo-100/20 focus:border-accent/40 transition-all"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Produto</label>
-                <Input
-                  placeholder="Ex: Leite Integral 1L"
-                  value={formProdName}
-                  onChange={(e) => setFormProdName(e.target.value)}
-                  className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 placeholder:text-indigo-100/20 focus:border-accent/40 transition-all"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Preço (R$)</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Preço (R$)</label>
                   <Input
                     type="number"
                     step="0.01"
                     value={formPrice}
                     onChange={(e) => setFormPrice(e.target.value)}
-                    className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 focus:border-accent/40 transition-all"
+                    className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:border-accent/40 transition-all"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Data</label>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Categoria</label>
+                  <Select value={formCategory} onValueChange={setFormCategory}>
+                    <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
+                      {CATEGORIES.map(cat => (
+                        <SelectItem key={cat.name} value={cat.name}>
+                          <span className="mr-2">{cat.emoji}</span>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Data</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 justify-start text-left font-normal hover:bg-indigo-900/20 focus:ring-accent/50 transition-all px-4",
+                          "w-full bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 justify-start text-left font-normal hover:bg-indigo-900/20 focus:ring-accent/50 transition-all px-4",
                           !formDate && "text-muted-foreground"
                         )}
                       >
@@ -263,24 +290,7 @@ export function AdvisorView() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Categoria</label>
-                <Select value={formCategory} onValueChange={setFormCategory}>
-                  <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
-                    {CATEGORIES.map(cat => (
-                      <SelectItem key={cat.name} value={cat.name}>
-                        <span className="mr-2">{cat.emoji}</span>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="flex justify-end gap-3 pt-2">
                 <Button 
                   type="button" 
                   variant="ghost" 
@@ -290,15 +300,15 @@ export function AdvisorView() {
                     setFormEstId("");
                     setFormDate(new Date());
                   }}
-                  className="h-14 rounded-xl bg-indigo-900/20 hover:bg-indigo-900/40 text-indigo-100 font-headline uppercase tracking-widest text-xs transition-all"
+                  className="h-12 px-6 rounded-xl bg-indigo-900/10 hover:bg-indigo-900/20 text-indigo-300 text-xs font-bold uppercase tracking-widest transition-all"
                 >
                   Cancelar
                 </Button>
                 <Button 
                   type="submit" 
-                  className="h-14 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-headline font-bold uppercase tracking-widest text-xs shadow-lg shadow-accent/10 transition-all"
+                  className="h-12 px-10 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-headline font-bold uppercase tracking-widest text-xs shadow-lg shadow-accent/10 transition-all"
                 >
-                  Salvar
+                  Salvar Produto
                 </Button>
               </div>
             </form>
