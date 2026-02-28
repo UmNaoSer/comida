@@ -1,37 +1,37 @@
 "use client";
 
 import React, { useState } from "react";
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { SummaryCards } from "@/components/nebula/summary-cards";
 import { TransactionList } from "@/components/nebula/transaction-list";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
 import { FlowChart } from "@/components/nebula/flow-chart";
 import { AdvisorView } from "@/components/nebula/advisor-view";
-import { AuthView } from "@/components/nebula/auth-view";
-import { LayoutDashboard, History, Sparkles, LogOut, Loader2, Network, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, History, Sparkles, Loader2, Network, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
+// Fixed user ID for guest access without login
+const GUEST_USER_ID = "guest-protocol-v1";
+
 export default function NebulaFinanx() {
-  const { user, isUserLoading } = useUser();
   const db = useFirestore();
-  const auth = useAuth();
   const [view, setView] = useState<View>('dashboard');
 
   const transactionsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
+    if (!db) return null;
     return query(
-      collection(db, "users", user.uid, "transactions"),
+      collection(db, "users", GUEST_USER_ID, "transactions"),
       orderBy("date", "desc")
     );
-  }, [db, user]);
+  }, [db]);
 
   const { data: transactions, isLoading: isTxLoading } = useCollection(transactionsQuery);
 
-  if (isUserLoading) {
+  if (isTxLoading && !transactions) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="relative">
@@ -39,17 +39,13 @@ export default function NebulaFinanx() {
           <Sparkles className="h-6 w-6 text-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
         </div>
         <div className="flex flex-col items-center gap-2">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-accent font-bold animate-pulse">Establishing Neural Link</p>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-accent font-bold animate-pulse">Initializing Direct Link</p>
           <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
             <div className="h-full bg-accent animate-[loading_2s_ease-in-out_infinite]" style={{ width: '40%' }} />
           </div>
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    return <AuthView />;
   }
 
   const txs = transactions || [];
@@ -76,25 +72,16 @@ export default function NebulaFinanx() {
               <h1 className="text-2xl font-headline font-black tracking-tighter uppercase italic">Nebula<span className="text-accent not-italic">Finanx</span></h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-income animate-pulse shadow-[0_0_8px_rgba(131,240,131,0.5)]" />
-                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Protocol Active</span>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Direct Access Active</span>
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex flex-col items-end mr-4">
-              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Neural Identity</span>
-              <span className="text-xs font-mono text-accent/80">{user.email || 'Anonymous Fragment'}</span>
+            <div className="flex flex-col items-end">
+              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Neural Mode</span>
+              <span className="text-xs font-mono text-accent/80">Guest Protocol</span>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => auth.signOut()} 
-              className="border-white/5 bg-white/5 hover:bg-expense/10 hover:text-expense hover:border-expense/20 transition-all rounded-xl h-10 px-4 group"
-            >
-              <LogOut className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Disconnect</span>
-            </Button>
           </div>
         </div>
       </header>
@@ -111,8 +98,8 @@ export default function NebulaFinanx() {
             
             <div className="grid gap-10 lg:grid-cols-12">
               <div className="lg:col-span-7 space-y-10">
-                <AddTransactionForm userId={user.uid} />
-                <TransactionList transactions={txs.slice(0, 5)} />
+                <AddTransactionForm userId={GUEST_USER_ID} />
+                <TransactionList transactions={txs.slice(0, 5)} userId={GUEST_USER_ID} />
               </div>
               <div className="lg:col-span-5 space-y-10">
                 <FlowChart transactions={txs} />
@@ -169,10 +156,10 @@ export default function NebulaFinanx() {
               </div>
               <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
                 <History className="h-4 w-4 text-accent" />
-                <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-widest">Sequence Status: Synchronized</span>
+                <span className="text-[10px] font-mono font-bold text-accent uppercase tracking-widest">Sequence Status: Active</span>
               </div>
             </div>
-            <TransactionList transactions={txs} showAll />
+            <TransactionList transactions={txs} userId={GUEST_USER_ID} showAll />
           </div>
         )}
 

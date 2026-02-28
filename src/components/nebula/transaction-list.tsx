@@ -3,27 +3,27 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ArrowUpRight, ArrowDownLeft, Trash2, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useFirestore, useUser } from "@/firebase";
+import { useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Button } from "@/components/ui/button";
 
 interface TransactionListProps {
   transactions: Transaction[];
+  userId: string;
   showAll?: boolean;
 }
 
-export function TransactionList({ transactions, showAll = false }: TransactionListProps) {
+export function TransactionList({ transactions, userId, showAll = false }: TransactionListProps) {
   const db = useFirestore();
-  const { user } = useUser();
 
   const sortedTransactions = [...transactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   const handleDelete = (txId: string) => {
-    if (!db || !user) return;
-    const txRef = doc(db, "users", user.uid, "transactions", txId);
+    if (!db) return;
+    const txRef = doc(db, "users", userId, "transactions", txId);
     deleteDocumentNonBlocking(txRef);
   };
 
