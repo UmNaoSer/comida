@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * NEBULA FINANCE SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict Path-Based Ownership model. All user data is 
+     * partitioned under a top-level /users/{userId} hierarchy. This ensures high 
+     * performance and absolute privacy by making authorization local to the document path.
+     *
+     * DATA STRUCTURE:
+     * - /users/{userId}/categories/{categoryId}: User-defined transaction classifications.
+     * - /users/{userId}/transactions/{transactionId}: Financial records (income/expense).
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Authorization Independence: Rules rely on the {userId} wildcard in the path rather 
+     *    than fetching external documents. This avoids the latency and cost of get() calls.
+     * 2. Implicit Privacy: Users can only list or get documents within their own subcollections.
+     *    There is no global listing of users or cross-user data access.
+     * 3. Prototyping Flexibility: While ownership is strictly enforced, the schema of 
+     *    content fields (descriptions, amounts) is not validated to allow for rapid UI iteration.
+     *
+     * RELATIONAL INTEGRITY:
+     * To prevent data corruption, rules enforce that document IDs provided in the 
+     * request body must match the document IDs in the Firestore path during creation.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the request is made by an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user matches the provided userId from the path. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks if the document exists and belongs to the authenticated user. Used for updates and deletes. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** @description Validates that the internal 'id' field of the document matches the path wildcard. */
+    function matchesPathId(fieldId) {
+      return request.resource.data.id == fieldId;
+    }
+
+    /** @description Ensures that critical relational fields (like IDs) remain unchanged during updates. */
+    function isImmutable(fieldName) {
+      return request.resource.data[fieldName] == resource.data[fieldName];
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for personal financial categories.
+     * @path /users/{userId}/categories/{categoryId}
+     * @allow Authenticated user 'user123' (create) a category at /users/user123/categories/cat_01
+     * @deny Authenticated user 'user123' (list) categories for /users/user999/categories
+     * @principle Path-based ownership ensuring users only manage their own classification system.
+     */
+    match /users/{userId}/categories/{categoryId} {
+      allow get, list: if isOwner(userId);
+      
+      allow create: if isOwner(userId) 
+                    && matchesPathId(categoryId);
+      
+      allow update: if isExistingOwner(userId) 
+                    && isImmutable('id');
+      
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for individual financial transactions.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow Authenticated user 'userABC' (update) a transaction at /users/userABC/transactions/tx_789
+     * @deny Authenticated user 'userABC' (get) a transaction belonging to /users/userXYZ/transactions/tx_123
+     * @principle Strict structural segregation where transaction access is gated by the parent user ID.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get, list: if isOwner(userId);
+      
+      allow create: if isOwner(userId) 
+                    && matchesPathId(transactionId);
+      
+      allow update: if isExistingOwner(userId) 
+                    && isImmutable('id');
+      
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // Global Deny: Default to no access for any path not explicitly defined above.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

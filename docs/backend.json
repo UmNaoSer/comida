@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single financial transaction, either an income or an expense, detailing its amount, type, date, description, and category.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary value of the transaction. Must be a positive number."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of transaction, indicating whether it's an income or an expense. Expected values are 'income' or 'expense'."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description or note about the transaction."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date and time when the transaction occurred.",
+          "format": "date-time"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category for this transaction. (Relationship: Category 1:N Transaction)"
+        }
+      },
+      "required": [
+        "id",
+        "amount",
+        "type",
+        "description",
+        "date",
+        "categoryId"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a classification for financial transactions, such as 'Groceries', 'Salary', or 'Rent'.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., 'Food', 'Salary', 'Transport')."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores financial categories (e.g., 'Food', 'Salary') defined by a specific user. Authorization is based on the 'userId' in the path, ensuring only the owner can access their categories.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns these categories."
+            },
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for a specific category within the user's collection."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores individual financial transactions (income/expense) for a specific user. Authorization is based on the 'userId' in the path. The 'categoryId' field refers to a category within the same user's categories subcollection, maintaining data linkage without creating authorization dependencies.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns these transactions."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for a specific transaction within the user's collection."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and debuggable, strictly adhering to the core design principles and strategy mandates. The primary strategy adopted is **Path-Based Ownership** and **Structural Segregation**, which inherently provides strong authorization independence and supports Queryable and Atomic Permissions (QAPs).\n\n1.  **User-Owned Collections (`/users/{userId}/...`)**:\n    *   All user-specific data, including `Categories` and `Transactions`, are nested under a user's unique ID (`/users/{userId}`). This pattern is highly effective for personal finance applications where data is private to an individual user.\n    *   **Authorization Independence:** Access to any document within `/users/{userId}/categories/{categoryId}` or `/users/{userId}/transactions/{transactionId}` is solely determined by matching `request.auth.uid` with the `{userId}` wildcard in the path. This eliminates the need for `get()` calls in security rules to check parent ownership or any other document's attributes for authorization. For example, a security rule would simply be `allow read, write: if request.auth.uid == userId;`, making it extremely simple, robust, and easy to debug.\n    *   **QAPs (Queryable and Atomic Permissions):** By segregating data by user ID in the path, `list` operations become trivial and secure. A user can efficiently query *all* their categories from `/users/{request.auth.uid}/categories` or *all* their transactions from `/users/{request.auth.uid}/transactions`. Firestore rules can enforce that only the authenticated user can read/write to their respective subcollections, preventing unauthorized access or accidental data exposure. There is no need for complex `where` clauses in rules that act as filters, as the path itself guarantees ownership.\n\n2.  **Structural Segregation (Homogeneous Security Posture)**:\n    *   Each collection (`categories`, `transactions`) within a user's path is homogeneous in its security requirements. All categories belong to the `{userId}` and all transactions belong to the `{userId}`. This ensures that a single, clear security rule can be applied to the entire collection, preventing mixed access policies within the same collection.\n\n3.  **Data Linkage (categoryId in Transaction)**:\n    *   The `Transaction` entity contains a `categoryId` field. This field references a `Category` document within the *same user's* `categories` subcollection (`/users/{userId}/categories/{categoryId}`). This relationship is for data integrity and logical grouping, *not* for authorization. The authorization of a `Transaction` document remains independent of the `Category` document it references, as its ownership is derived directly from the `/users/{userId}` path segment.\n\nThis design prioritizes the core principles by making authorization explicit, decentralized, and directly tied to the document's path, resulting in a highly secure, performant, and maintainable Firestore structure for Nebula Finanx."
+  }
+}
