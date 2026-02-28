@@ -19,31 +19,31 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-4 sm:p-6", className)}
       locale={ptBR}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        month_caption: "flex justify-center pt-1 relative items-center mb-4",
+        month: "space-y-4 relative",
+        month_caption: "flex justify-center relative items-center h-10 mb-6 px-10",
         caption_label: "text-sm font-bold uppercase tracking-widest text-indigo-100",
-        nav: "space-x-1 flex items-center",
+        nav: "flex items-center",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border-white/10 hover:bg-white/5 transition-all absolute left-1 z-10"
+          "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 border-white/10 hover:bg-white/5 transition-all absolute left-0 top-1 z-20"
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border-white/10 hover:bg-white/5 transition-all absolute right-1 z-10"
+          "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 border-white/10 hover:bg-white/5 transition-all absolute right-0 top-1 z-20"
         ),
-        month_grid: "w-full border-collapse space-y-1",
+        month_grid: "w-full border-collapse",
         weekdays: "flex mb-2",
-        weekday: "text-indigo-400/50 rounded-md w-9 font-black text-[10px] uppercase tracking-tighter text-center",
+        weekday: "text-indigo-400/50 rounded-md w-10 font-black text-[10px] uppercase tracking-tighter text-center",
         week: "flex w-full mt-1",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-medium aria-selected:opacity-100 hover:bg-accent/20 hover:text-accent transition-all rounded-md text-sm"
+          "h-10 w-10 p-0 font-medium aria-selected:opacity-100 hover:bg-accent/20 hover:text-accent transition-all rounded-md text-sm"
         ),
-        day_button: "h-9 w-9 p-0 font-medium aria-selected:opacity-100 rounded-md",
+        day_button: "h-10 w-10 p-0 font-medium aria-selected:opacity-100 rounded-md",
         range_start: "day-range-start",
         range_end: "day-range-end",
         selected:
