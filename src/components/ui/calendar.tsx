@@ -19,12 +19,13 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-4 sm:p-6", className)}
+      fixedWeeks={true} // Garante altura constante (sempre 6 semanas)
+      className={cn("p-4", className)}
       locale={ptBR}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4 relative",
-        month_caption: "flex justify-center relative items-center h-10 mb-6 px-10",
+        month: "space-y-4 relative w-[280px]", // Largura fixa para estabilidade
+        month_caption: "flex justify-center relative items-center h-10 mb-4 px-10",
         caption_label: "text-sm font-bold uppercase tracking-widest text-indigo-100",
         nav: "flex items-center",
         button_previous: cn(
