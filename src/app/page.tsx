@@ -1,16 +1,19 @@
+
 "use client";
 
 import React, { useState } from "react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { SummaryCards } from "@/components/nebula/summary-cards";
 import { TransactionList } from "@/components/nebula/transaction-list";
 import { FlowChart } from "@/components/nebula/flow-chart";
+import { AIInsights } from "@/components/nebula/ai-insights";
 import { AdvisorView } from "@/components/nebula/advisor-view";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
-import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight } from "lucide-react";
+import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
@@ -19,6 +22,7 @@ const GUEST_USER_ID = "guest-protocol-v1";
 export default function NebulaFinanx() {
   const db = useFirestore();
   const [view, setView] = useState<View>('dashboard');
+  const [txSearch, setTxSearch] = useState("");
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -46,6 +50,12 @@ export default function NebulaFinanx() {
   // Recent transactions for the dashboard (limit to 5)
   const recentTxs = txs.slice(0, 5);
 
+  // Filtered transactions for the Audit Logs view
+  const filteredTxs = txs.filter(t => 
+    t.description.toLowerCase().includes(txSearch.toLowerCase()) ||
+    (t.category && t.category.toLowerCase().includes(txSearch.toLowerCase()))
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-headline">
       {/* Header */}
@@ -64,7 +74,7 @@ export default function NebulaFinanx() {
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-6 max-w-5xl pb-32">
         {view === 'dashboard' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="space-y-10 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
@@ -85,6 +95,8 @@ export default function NebulaFinanx() {
             />
             
             <FlowChart transactions={txs} />
+
+            <AIInsights transactions={txs} />
 
             {/* Últimos Lançamentos Section */}
             <Card className="bg-indigo-950/10 border-indigo-500/10 rounded-[2rem] overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.05)]">
@@ -114,13 +126,25 @@ export default function NebulaFinanx() {
         )}
 
         {view === 'transactions' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="space-y-10 animate-in fade-in duration-500">
             <div className="space-y-1">
               <h2 className="text-3xl font-bold uppercase tracking-tight italic">Audit Logs</h2>
               <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Histórico de Vetores Neurais</p>
             </div>
+            
             <AddTransactionForm userId={GUEST_USER_ID} />
-            <TransactionList transactions={txs} userId={GUEST_USER_ID} showAll />
+
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-accent transition-colors" />
+              <Input 
+                placeholder="Pesquisar transações por descrição ou categoria..."
+                value={txSearch}
+                onChange={(e) => setTxSearch(e.target.value)}
+                className="bg-white/5 border-white/5 h-14 pl-12 rounded-2xl focus:border-accent/40 focus:bg-white/[0.08] transition-all text-sm"
+              />
+            </div>
+
+            <TransactionList transactions={filteredTxs} userId={GUEST_USER_ID} showAll />
           </div>
         )}
 
