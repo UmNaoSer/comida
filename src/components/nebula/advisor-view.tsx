@@ -201,9 +201,6 @@ export function AdvisorView() {
                 <Plus className="h-5 w-5 glow-accent" />
                 Adicionar Produto
               </h3>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
-                Input de Vetor
-              </div>
             </div>
             
             <form onSubmit={handleSaveProduct} className="space-y-6">
@@ -306,7 +303,7 @@ export function AdvisorView() {
                     }}
                     className="h-12 px-8 rounded-xl bg-white/5 hover:bg-white/10 text-muted-foreground text-xs font-black uppercase tracking-widest transition-all"
                   >
-                    Cancelar
+                    Resetar
                   </Button>
                   <Button 
                     type="submit" 
