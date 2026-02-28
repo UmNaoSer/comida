@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, Plus, Cpu, Zap, ShoppingBag, History, Trash2 } from "lucide-react";
+import { Search, Trophy, Store, Cpu, Zap, ShoppingBag, History, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, query, where, orderBy } from "firebase/firestore";
+import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 type Tab = 'produtos' | 'estabelecimentos';
@@ -20,7 +20,14 @@ type Tab = 'produtos' | 'estabelecimentos';
 const GUEST_USER_ID = "guest-protocol-v1";
 
 const CATEGORIES = [
-  "Mercado", "Hortifruti", "Carnes", "Higiene", "Limpeza", "Bebidas", "Eletrônicos", "Outros"
+  { name: "Mercado", emoji: "🛒" },
+  { name: "Hortifruti", emoji: "🍎" },
+  { name: "Carnes", emoji: "🥩" },
+  { name: "Higiene", emoji: "🧼" },
+  { name: "Limpeza", emoji: "🧹" },
+  { name: "Bebidas", emoji: "🥤" },
+  { name: "Eletrônicos", emoji: "💻" },
+  { name: "Outros", emoji: "📦" }
 ];
 
 export function AdvisorView() {
@@ -29,14 +36,17 @@ export function AdvisorView() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("todas");
   
-  // Establishment Registration State
+  // States for the "Add Product" form (matching the image)
+  const [formEstId, setFormEstId] = useState("");
+  const [formProdName, setFormProdName] = useState("");
+  const [formPrice, setFormPrice] = useState("");
+  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formCategory, setFormCategory] = useState("Outros");
+
+  // Establishment Registration State (for the second tab)
   const [newEstName, setNewEstName] = useState("");
 
-  // Product Registration State
-  const [newProdName, setNewProdName] = useState("");
-  const [newProdCategory, setNewProdCategory] = useState("Mercado");
-
-  // New Price Entry State
+  // New Price Entry State (for existing products list)
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [addingToProductId, setAddingToProductId] = useState<string | null>(null);
@@ -60,6 +70,41 @@ export function AdvisorView() {
   }, [db]);
   const { data: allEntries } = useCollection(entriesQuery);
 
+  const handleSaveProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formProdName || !formPrice || !formEstId || !db) return;
+
+    const store = establishments?.find(e => e.id === formEstId);
+    if (!store) return;
+
+    // 1. Create/Update Product
+    const prodId = Math.random().toString(36).substr(2, 9);
+    const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
+    setDocumentNonBlocking(prodRef, {
+      id: prodId,
+      name: formProdName,
+      category: formCategory,
+    }, { merge: true });
+
+    // 2. Create Price Entry
+    const entryId = Math.random().toString(36).substr(2, 9);
+    const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
+    setDocumentNonBlocking(entryRef, {
+      id: entryId,
+      productId: prodId,
+      storeId: store.id,
+      storeName: store.name,
+      price: parseFloat(formPrice),
+      date: new Date(formDate).toISOString(),
+    }, { merge: true });
+
+    // Reset Form
+    setFormProdName("");
+    setFormPrice("");
+    setFormEstId("");
+    setFormCategory("Outros");
+  };
+
   const handleAddEstablishment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEstName || !db) return;
@@ -74,44 +119,9 @@ export function AdvisorView() {
     setNewEstName("");
   };
 
-  const handleAddProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProdName || !db) return;
-    const prodId = Math.random().toString(36).substr(2, 9);
-    const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
-    setDocumentNonBlocking(prodRef, {
-      id: prodId,
-      name: newProdName,
-      category: newProdCategory,
-    }, { merge: true });
-    setNewProdName("");
-  };
-
-  const handleAddPriceEntry = (productId: string) => {
-    if (!selectedStoreId || !newPrice || !db) return;
-    const store = establishments?.find(e => e.id === selectedStoreId);
-    if (!store) return;
-
-    const entryId = Math.random().toString(36).substr(2, 9);
-    const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
-    setDocumentNonBlocking(entryRef, {
-      id: entryId,
-      productId,
-      storeId: store.id,
-      storeName: store.name,
-      price: parseFloat(newPrice),
-      date: new Date().toISOString(),
-    }, { merge: true });
-
-    setNewPrice("");
-    setSelectedStoreId("");
-    setAddingToProductId(null);
-  };
-
   const handleDeleteProduct = (productId: string) => {
     if (!db) return;
     deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "products", productId));
-    // Also cleanup entries? In a real app yes. Here we'll just delete the prod.
   };
 
   const filteredProducts = products?.filter(p => {
@@ -150,36 +160,106 @@ export function AdvisorView() {
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
-          {/* Add Product Form */}
-          <Card className="nebula-card border-accent/20 rounded-[2rem] p-6 relative overflow-hidden">
-             <div className="absolute -right-10 -top-10 opacity-[0.03]">
-                <ShoppingBag className="h-40 w-40 text-accent" />
-             </div>
-            <h3 className="text-lg font-black uppercase tracking-widest text-accent mb-6 flex items-center gap-2">
-              <Plus className="h-5 w-5 glow-accent" />
-              New Neural Product
+          {/* ADICIONAR PRODUTO Form (Matching Image) */}
+          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] p-8 max-w-xl mx-auto shadow-2xl">
+            <h3 className="text-xl font-headline font-medium tracking-wide text-indigo-100 mb-8 uppercase">
+              Adicionar Produto
             </h3>
-            <form onSubmit={handleAddProduct} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                placeholder="Product Name..."
-                value={newProdName}
-                onChange={(e) => setNewProdName(e.target.value)}
-                className="bg-white/5 border-white/5 h-14 rounded-xl focus:border-accent/40 transition-all text-sm font-medium"
-              />
-              <Select value={newProdCategory} onValueChange={setNewProdCategory}>
-                <SelectTrigger className="h-14 bg-white/5 border-white/5 rounded-xl text-xs font-bold uppercase tracking-widest">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-white/10">
-                  {CATEGORIES.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button type="submit" className="h-14 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-accent/10 group transition-all">
-                Commit Product
-                <Zap className="ml-2 h-4 w-4 transition-transform group-hover:scale-125" />
-              </Button>
+            <form onSubmit={handleSaveProduct} className="space-y-6">
+              {/* ESTABELECIMENTO */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Estabelecimento</label>
+                <Select value={formEstId} onValueChange={setFormEstId}>
+                  <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100/60 focus:ring-accent/50 transition-all">
+                    <SelectValue placeholder="Nome do Mercado/Loja" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
+                    {establishments?.map(est => (
+                      <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
+                    ))}
+                    {(!establishments || establishments.length === 0) && (
+                      <SelectItem value="none" disabled>Nenhum estabelecimento cadastrado</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* PRODUTO */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Produto</label>
+                <Input
+                  placeholder="Ex: Leite Integral 1L"
+                  value={formProdName}
+                  onChange={(e) => setFormProdName(e.target.value)}
+                  className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 placeholder:text-indigo-100/20 focus:border-accent/40 transition-all"
+                />
+              </div>
+
+              {/* PREÇO e DATA */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Preço (R$)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(e.target.value)}
+                    className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 focus:border-accent/40 transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Data</label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 focus:border-accent/40 transition-all pr-10"
+                    />
+                    <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400/40 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* CATEGORIA */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400/80">Categoria</label>
+                <Select value={formCategory} onValueChange={setFormCategory}>
+                  <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-14 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#121321] border-indigo-500/20 text-indigo-100">
+                    {CATEGORIES.map(cat => (
+                      <SelectItem key={cat.name} value={cat.name}>
+                        <span className="mr-2">{cat.emoji}</span>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* BUTTONS */}
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => {
+                    setFormProdName("");
+                    setFormPrice("");
+                    setFormEstId("");
+                  }}
+                  className="h-14 rounded-xl bg-indigo-900/20 hover:bg-indigo-900/40 text-indigo-100 font-headline uppercase tracking-widest text-xs transition-all"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="h-14 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-headline font-bold uppercase tracking-widest text-xs shadow-lg shadow-accent/10 transition-all"
+                >
+                  Salvar
+                </Button>
+              </div>
             </form>
           </Card>
 
@@ -188,7 +268,7 @@ export function AdvisorView() {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Scan neural patterns..."
+                placeholder="Pesquisar produtos..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-indigo-950/20 border-white/10 h-12 pl-12 rounded-xl focus:border-accent/40 transition-all"
@@ -198,10 +278,10 @@ export function AdvisorView() {
               <SelectTrigger className="w-full sm:w-64 bg-indigo-950/20 border-white/10 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
                 <SelectValue placeholder="Todas Categorias" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-950 border-white/10">
+              <SelectContent className="bg-slate-950 border-white/10 text-indigo-100">
                 <SelectItem value="todas">Todas Categorias</SelectItem>
                 {CATEGORIES.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -211,7 +291,7 @@ export function AdvisorView() {
           <div className="grid grid-cols-1 gap-6">
             {!filteredProducts || filteredProducts.length === 0 ? (
               <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black italic">No product signals found.</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black italic">Nenhum sinal de produto encontrado.</p>
               </div>
             ) : (
               filteredProducts.map((product) => {
@@ -220,6 +300,7 @@ export function AdvisorView() {
                 const minHistory = productEntries.length > 0 ? Math.min(...productEntries.map(e => e.price)) : 0;
                 const variation = productEntries.length > 1 ? (Math.max(...productEntries.map(e => e.price)) - currentBest) : 0;
                 const bestEntryToday = productEntries.length > 0 ? productEntries.reduce((prev, curr) => prev.price < curr.price ? prev : curr) : null;
+                const categoryData = CATEGORIES.find(c => c.name === product.category);
 
                 return (
                   <Card key={product.id} className="bg-indigo-950/10 border-white/5 rounded-[2rem] overflow-hidden group hover:border-accent/20 transition-all">
@@ -228,7 +309,7 @@ export function AdvisorView() {
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
                           <span className="text-[9px] font-black tracking-[0.2em] bg-accent/10 text-accent px-4 py-1.5 rounded-full uppercase">
-                            {product.category}
+                            {categoryData?.emoji} {product.category}
                           </span>
                           <h3 className="text-3xl font-bold tracking-tight mt-3">{product.name}</h3>
                         </div>
@@ -276,61 +357,6 @@ export function AdvisorView() {
                         </div>
                       )}
 
-                      {/* Action: Log Price */}
-                      <div className="pt-2">
-                        {addingToProductId === product.id ? (
-                           <div className="bg-white/5 p-6 rounded-2xl space-y-4 animate-in slide-in-from-top-2">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-accent">Log New Observation</p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
-                                  <SelectTrigger className="bg-slate-900 border-white/10 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
-                                    <SelectValue placeholder="Select Establishment" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-slate-950 border-white/10">
-                                    {establishments?.map(est => (
-                                      <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
-                                    ))}
-                                    {(!establishments || establishments.length === 0) && (
-                                      <SelectItem value="none" disabled>No establishments registered</SelectItem>
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="Price Magnitude..."
-                                  value={newPrice}
-                                  onChange={(e) => setNewPrice(e.target.value)}
-                                  className="bg-slate-900 border-white/10 h-12 rounded-xl text-sm"
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <Button 
-                                  onClick={() => handleAddPriceEntry(product.id)}
-                                  className="flex-1 bg-accent text-accent-foreground font-black uppercase tracking-widest text-[10px]"
-                                >
-                                  Commit Entry
-                                </Button>
-                                <Button 
-                                  variant="ghost"
-                                  onClick={() => setAddingToProductId(null)}
-                                  className="text-muted-foreground text-[10px] uppercase font-black"
-                                >
-                                  Abort
-                                </Button>
-                              </div>
-                           </div>
-                        ) : (
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setAddingToProductId(product.id)}
-                            className="w-full h-12 border-accent/20 hover:bg-accent/10 text-accent font-black uppercase tracking-[0.3em] text-[10px] rounded-xl"
-                          >
-                            Add New Price Signal
-                          </Button>
-                        )}
-                      </div>
-
                       {/* History Feed */}
                       <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-2">
@@ -338,7 +364,7 @@ export function AdvisorView() {
                           <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Neural History Feed</p>
                         </div>
                         {productEntries.length === 0 ? (
-                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">No historical signals captured yet.</p>
+                           <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhum sinal histórico capturado.</p>
                         ) : (
                           productEntries.map((entry) => (
                             <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
@@ -371,7 +397,7 @@ export function AdvisorView() {
              </div>
             <h3 className="text-xl font-black uppercase tracking-[0.2em] text-accent mb-8 flex items-center gap-3">
               <Cpu className="h-6 w-6 glow-accent" />
-              Register New Node
+              Registrar Novo Nó
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
               <Input
@@ -381,7 +407,7 @@ export function AdvisorView() {
                 className="bg-white/5 border-white/5 h-16 rounded-2xl focus:border-accent/40 transition-all text-sm font-medium flex-1 px-6"
               />
               <Button type="submit" className="h-16 px-10 bg-accent text-accent-foreground font-black uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-accent/10 group transition-all">
-                Add Node
+                Adicionar Nó
                 <Plus className="ml-3 h-5 w-5 transition-transform group-hover:rotate-90" />
               </Button>
             </form>
@@ -391,7 +417,7 @@ export function AdvisorView() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(!establishments || establishments.length === 0) ? (
               <div className="md:col-span-2 lg:col-span-3 py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">No neural nodes detected in sector.</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">Nenhum nó neural detectado no setor.</p>
               </div>
             ) : (
               establishments.map((est) => (
