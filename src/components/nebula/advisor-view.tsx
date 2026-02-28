@@ -17,6 +17,7 @@ import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/no
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Tab = 'produtos' | 'estabelecimentos';
 
@@ -119,7 +120,7 @@ export function AdvisorView() {
     setDocumentNonBlocking(estRef, {
       id: estId,
       name: newEstName,
-      type: "Estabelecimento Logged",
+      type: "Estabelecimento Logado",
       createdAt: new Date().toISOString(),
     }, { merge: true });
     setNewEstName("");
@@ -246,7 +247,7 @@ export function AdvisorView() {
                         )}
                       >
                         <CalendarIcon className="mr-3 h-4 w-4 text-indigo-400/40" />
-                        {formDate ? format(formDate, "dd/MM/yyyy") : <span>Data</span>}
+                        {formDate ? format(formDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a Data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 bg-[#1a1b2e] border-indigo-500/20" align="end">
@@ -255,6 +256,7 @@ export function AdvisorView() {
                         selected={formDate}
                         onSelect={(date) => date && setFormDate(date)}
                         initialFocus
+                        locale={ptBR}
                       />
                     </PopoverContent>
                   </Popover>
@@ -355,14 +357,12 @@ export function AdvisorView() {
                               <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">MAGNITUDE ATUAL</p>
                               <p className="text-3xl font-black text-cyan-400">R$ {currentBest.toFixed(2)}</p>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <button 
                               onClick={() => handleDeleteProductGroup(product.name)}
-                              className="text-muted-foreground hover:text-expense hover:bg-expense/10"
+                              className="text-muted-foreground hover:text-expense transition-colors"
                             >
                               <Trash2 className="h-5 w-5" />
-                            </Button>
+                            </button>
                         </div>
                       </div>
 
@@ -395,7 +395,7 @@ export function AdvisorView() {
                       <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-2">
                           <History className="h-4 w-4 text-indigo-400" />
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Neural History Feed</p>
+                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Feed de Histórico Neural</p>
                         </div>
                         {productEntries.length === 0 ? (
                            <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest text-center py-4">Nenhum sinal histórico capturado.</p>
@@ -404,7 +404,7 @@ export function AdvisorView() {
                             <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
                               <div className="flex items-center gap-10">
                                 <span className="font-bold text-indigo-200 w-24 truncate">{entry.storeName}</span>
-                                <span className="text-muted-foreground font-mono text-[10px]">{new Date(entry.date).toLocaleDateString()}</span>
+                                <span className="text-muted-foreground font-mono text-[10px]">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
                               </div>
                               <div className="flex items-center gap-8">
                                 <div className="text-right">
@@ -434,7 +434,7 @@ export function AdvisorView() {
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
               <Input
-                placeholder="Ex: Mainframe Store, Neo-Market..."
+                placeholder="Ex: Mercado Central, Loja Neo..."
                 value={newEstName}
                 onChange={(e) => setNewEstName(e.target.value)}
                 className="bg-white/5 border-white/5 h-16 rounded-2xl focus:border-accent/40 transition-all text-sm font-medium flex-1 px-6"

@@ -54,11 +54,11 @@ export default function NebulaFinanx() {
           <Sparkles className="h-6 w-6 text-accent" />
           <div className="flex flex-col">
             <h1 className="text-xl font-bold tracking-widest uppercase">Nebula</h1>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] -mt-1">Finance Intelligence</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] -mt-1">Inteligência Financeira</span>
           </div>
         </div>
         
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/20 border border-white/10" />
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-lg shadow-indigo-500/20 border border-white/10" />
       </header>
 
       {/* Main Content */}
@@ -94,7 +94,7 @@ export default function NebulaFinanx() {
                   onClick={() => setView('transactions')}
                   className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest transition-colors flex items-center gap-1 group"
                 >
-                  Ver Todas
+                  Ver Todos
                   <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </CardHeader>
@@ -117,7 +117,7 @@ export default function NebulaFinanx() {
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="space-y-1">
               <h2 className="text-3xl font-bold uppercase tracking-tight italic">Audit Logs</h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Neural Vector History</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Histórico de Vetores Neurais</p>
             </div>
             <AddTransactionForm userId={GUEST_USER_ID} />
             <TransactionList transactions={txs} userId={GUEST_USER_ID} showAll />
@@ -126,7 +126,7 @@ export default function NebulaFinanx() {
 
         {view === 'advisor' && (
           <div className="animate-in fade-in duration-500">
-            <AdvisorView transactions={txs} />
+            <AdvisorView />
           </div>
         )}
       </main>

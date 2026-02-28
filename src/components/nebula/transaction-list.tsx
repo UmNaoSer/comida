@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Transaction } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { ArrowUpRight, ArrowDownLeft, Trash2, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirestore } from "@/firebase";
@@ -38,12 +39,12 @@ export function TransactionList({ transactions, userId, showAll = false, compact
 
   const formatCurrency = (amount: number) => {
     if (!isMounted) return amount.toFixed(2);
-    return amount.toLocaleString(undefined, { minimumFractionDigits: 2 });
+    return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
   };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return format(date, "dd MMM yyyy");
+    return format(date, "dd MMM yyyy", { locale: ptBR });
   };
 
   if (compact) {
@@ -73,7 +74,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                 "font-bold text-sm",
                 tx.type === 'income' ? "text-income" : "text-expense"
               )}>
-                {tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}
+                {tx.type === 'income' ? '+' : '-'}R$ {formatCurrency(tx.amount)}
               </p>
             </div>
           </div>
@@ -87,17 +88,17 @@ export function TransactionList({ transactions, userId, showAll = false, compact
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl font-headline flex items-center gap-2">
           <Cpu className="h-5 w-5 text-primary" />
-          {showAll ? "All Fluctuations" : "Recent Signals"}
+          {showAll ? "Todas as Flutuações" : "Sinais Recentes"}
         </CardTitle>
         <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-          Count: {transactions.length}
+          Total: {transactions.length}
         </span>
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y divide-white/5">
           {sortedTransactions.length === 0 ? (
             <div className="p-16 text-center text-muted-foreground italic font-mono text-[10px] uppercase tracking-widest">
-              Zero signals detected in current timeframe.
+              Nenhum sinal detectado no intervalo atual.
             </div>
           ) : (
             sortedTransactions.map((tx) => (
@@ -135,17 +136,15 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                         tx.type === 'income' ? "text-income" : "text-expense"
                       )}
                     >
-                      {tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}
+                      {tx.type === 'income' ? '+' : '-'}R$ {formatCurrency(tx.amount)}
                     </p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <button 
                     onClick={() => handleDelete(tx.id)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-expense hover:bg-expense/10 transition-all rounded-full h-8 w-8"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-expense transition-all"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))

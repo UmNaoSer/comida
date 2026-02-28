@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface FlowChartProps {
   transactions: Transaction[];
@@ -37,7 +38,7 @@ export function FlowChart({ transactions }: FlowChartProps) {
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     return {
-      month: format(month, "MMM"),
+      month: format(month, "MMM", { locale: ptBR }),
       income,
     };
   });
