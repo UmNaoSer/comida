@@ -76,7 +76,9 @@ export function AdvisorView() {
     const store = establishments?.find(e => e.id === formEstId);
     if (!store) return;
 
-    const existingProduct = products?.find(p => p.name.toLowerCase() === formProdName.trim().toLowerCase());
+    // Normalize product name for grouping
+    const normalizedName = formProdName.trim().toLowerCase();
+    const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
     
     let prodId: string;
     if (existingProduct) {
@@ -189,21 +191,25 @@ export function AdvisorView() {
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
-          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] p-6 max-w-4xl mx-auto shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-headline font-medium tracking-wide text-indigo-100 uppercase">
+          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2.5rem] p-6 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.02]">
+              <Cpu className="h-32 w-32 text-accent" />
+            </div>
+            
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-headline font-black text-accent italic uppercase tracking-tighter flex items-center gap-3">
+                <Plus className="h-5 w-5 glow-accent" />
                 Adicionar Produto
               </h3>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-accent/60">
-                <Cpu className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
                 Input de Vetor
               </div>
             </div>
             
             <form onSubmit={handleSaveProduct} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Estabelecimento</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Estabelecimento</label>
                   <Select value={formEstId} onValueChange={setFormEstId}>
                     <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
                       <SelectValue placeholder="Selecione o Mercado" />
@@ -220,19 +226,17 @@ export function AdvisorView() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Produto</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Produto</label>
                   <Input
-                    placeholder="Ex: Leite Integral 1L"
+                    placeholder="Ex: Leite Integral"
                     value={formProdName}
                     onChange={(e) => setFormProdName(e.target.value)}
                     className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 placeholder:text-indigo-100/20 focus:border-accent/40 transition-all"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Preço (R$)</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Preço (R$)</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -244,35 +248,7 @@ export function AdvisorView() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Data</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div className="relative cursor-pointer group">
-                        <Input
-                          readOnly
-                          value={formDate ? format(formDate, "dd.MM.yyyy") : "dd.mm.yyyy"}
-                          placeholder="dd.mm.yyyy"
-                          className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 pr-10 cursor-pointer focus:border-accent/40 transition-all"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400/50 group-hover:text-accent transition-colors">
-                          <CalendarIcon className="h-5 w-5" />
-                        </div>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-[#121321] border-indigo-500/20">
-                      <Calendar
-                        mode="single"
-                        selected={formDate}
-                        onSelect={setFormDate}
-                        locale={ptBR}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-[0.1em] text-indigo-400/80 ml-1">Categoria</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Categoria</label>
                   <Select value={formCategory} onValueChange={setFormCategory}>
                     <SelectTrigger className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:ring-accent/50 transition-all">
                       <SelectValue />
@@ -289,33 +265,63 @@ export function AdvisorView() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => {
-                    setFormProdName("");
-                    setFormPrice("");
-                    setFormEstId("");
-                    setFormDate(new Date());
-                  }}
-                  className="h-12 px-6 rounded-xl bg-indigo-900/10 hover:bg-indigo-900/20 text-indigo-300 text-xs font-bold uppercase tracking-widest transition-all"
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="h-12 px-10 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-headline font-bold uppercase tracking-widest text-xs shadow-lg shadow-accent/10 transition-all"
-                >
-                  Salvar Produto
-                </Button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="w-full max-w-[240px] space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Coleta</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="relative cursor-pointer group">
+                        <Input
+                          readOnly
+                          value={formDate ? format(formDate, "dd.MM.yyyy") : "dd.mm.yyyy"}
+                          placeholder="dd.mm.yyyy"
+                          className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 pr-10 cursor-pointer focus:border-accent/40 transition-all"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400/50 group-hover:text-accent transition-colors">
+                          <CalendarIcon className="h-5 w-5" />
+                        </div>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-[#121321] border-indigo-500/20" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formDate}
+                        onSelect={setFormDate}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => {
+                      setFormProdName("");
+                      setFormPrice("");
+                      setFormEstId("");
+                      setFormDate(new Date());
+                    }}
+                    className="h-12 px-8 rounded-xl bg-white/5 hover:bg-white/10 text-muted-foreground text-xs font-black uppercase tracking-widest transition-all"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="h-12 px-12 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-headline font-black uppercase tracking-widest text-xs shadow-lg shadow-accent/20 transition-all active:scale-95"
+                  >
+                    Salvar Produto
+                  </Button>
+                </div>
               </div>
             </form>
           </Card>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-accent transition-colors" />
               <Input
                 placeholder="Pesquisar produtos..."
                 value={search}
@@ -324,7 +330,7 @@ export function AdvisorView() {
               />
             </div>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full sm:w-64 bg-indigo-950/20 border-white/10 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
+              <SelectTrigger className="w-full sm:w-64 bg-indigo-950/20 border-white/10 h-12 rounded-xl text-xs font-black uppercase tracking-widest">
                 <SelectValue placeholder="Todas Categorias" />
               </SelectTrigger>
               <SelectContent className="bg-slate-950 border-white/10 text-indigo-100">
@@ -368,7 +374,7 @@ export function AdvisorView() {
                             </div>
                             <button 
                               onClick={() => handleDeleteProductGroup(product.name)}
-                              className="text-muted-foreground hover:text-expense transition-colors"
+                              className="text-muted-foreground hover:text-expense transition-colors mt-2"
                             >
                               <Trash2 className="h-5 w-5" />
                             </button>
