@@ -100,6 +100,14 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const { data: products } = useCollection(productsQuery);
 
+  // Fetch establishments for matching
+  const establishmentsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "users", userId, "establishments"), orderBy("name"));
+  }, [db, userId]);
+
+  const { data: establishments } = useCollection(establishmentsQuery);
+
   // Fetch latest transaction for date suggestion
   const latestTxQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -190,22 +198,29 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     setIsAnalyzing(true);
     try {
       const existingProductNames = products?.map(p => p.name) || [];
-      const result = await analyzeReceipt({ photoDataUri, existingProducts: existingProductNames });
+      const existingEstNames = establishments?.map(e => e.name) || [];
+      
+      const result = await analyzeReceipt({ 
+        photoDataUri, 
+        existingProducts: existingProductNames,
+        existingEstablishments: existingEstNames
+      });
+
       const matched = result.items.map(item => {
-        // Use the AI suggested match name if provided, otherwise fallback to strict search
         const matchName = item.matchedProductName || item.name;
         const match = products?.find(p => p.name.toLowerCase() === matchName.toLowerCase());
         
         return { 
           ...item,
-          name: match ? match.name : item.name, // Use the official name if matched
+          name: match ? match.name : item.name, 
           matchedProduct: match || null, 
           selected: !!match,
           quantity: 1 
         };
       });
+
       setReviewItems(matched);
-      setReviewEstablishment(result.establishmentName || "");
+      setReviewEstablishment(result.matchedEstablishmentName || result.establishmentName || "");
       setReviewDate(selectedDate);
       setIsReviewOpen(true);
       setIsCameraOpen(false);

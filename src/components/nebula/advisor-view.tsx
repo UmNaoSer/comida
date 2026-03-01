@@ -157,7 +157,13 @@ export function AdvisorView() {
 
     try {
       const existingProductNames = products?.map(p => p.name) || [];
-      const result = await analyzeReceipt({ photoDataUri, existingProducts: existingProductNames });
+      const existingEstNames = establishments?.map(e => e.name) || [];
+      
+      const result = await analyzeReceipt({ 
+        photoDataUri, 
+        existingProducts: existingProductNames,
+        existingEstablishments: existingEstNames
+      });
       
       // Post-process with AI suggested names
       const processedItems = result.items.map(item => {
@@ -169,7 +175,11 @@ export function AdvisorView() {
         };
       });
 
-      setReviewData({ ...result, items: processedItems });
+      setReviewData({ 
+        ...result, 
+        establishmentName: result.matchedEstablishmentName || result.establishmentName,
+        items: processedItems 
+      });
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (error) {

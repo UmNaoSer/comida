@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Fluxo para análise de notas fiscais de supermercado via IA.
- * Extrai estabelecimento, produtos e preços a partir de uma imagem, realizando correspondência inteligente com produtos existentes.
+ * Extrai estabelecimento, produtos e preços a partir de uma imagem, realizando correspondência inteligente com produtos e estabelecimentos existentes.
  */
 
 import { ai } from '@/ai/genkit';
@@ -16,12 +16,14 @@ const ReceiptItemSchema = z.object({
 
 const AnalyzeReceiptInputSchema = z.object({
   photoDataUri: z.string().describe("Foto da nota fiscal como data URI Base64."),
-  existingProducts: z.array(z.string()).optional().describe("Lista de nomes de produtos que o usuário já possui cadastrados para tentativa de correspondência inteligente."),
+  existingProducts: z.array(z.string()).optional().describe("Lista de nomes de produtos que o usuário já possui cadastrados."),
+  existingEstablishments: z.array(z.string()).optional().describe("Lista de nomes de estabelecimentos que o usuário já possui cadastrados."),
 });
 export type AnalyzeReceiptInput = z.infer<typeof AnalyzeReceiptInputSchema>;
 
 const AnalyzeReceiptOutputSchema = z.object({
   establishmentName: z.string().describe('Nome do estabelecimento extraído da nota.'),
+  matchedEstablishmentName: z.string().optional().describe('Nome do estabelecimento correspondente na lista de estabelecimentos existentes do usuário, se houver uma correspondência próxima.'),
   items: z.array(ReceiptItemSchema).describe('Lista de produtos e preços encontrados.'),
 });
 export type AnalyzeReceiptOutput = z.infer<typeof AnalyzeReceiptOutputSchema>;
@@ -34,6 +36,14 @@ const analyzeReceiptPrompt = ai.definePrompt({
 Analise a imagem da nota fiscal fornecida e extraia:
 1. O nome do estabelecimento (Supermercado, Loja, etc).
 2. Uma lista de todos os itens comprados, contendo o nome do item e o valor pago.
+
+{{#if existingEstablishments}}
+Para o estabelecimento extraído, verifique se ele corresponde a algum dos seguintes estabelecimentos que o usuário já cadastrou:
+{{#each existingEstablishments}}
+- {{this}}
+{{/each}}
+Se houver uma correspondência próxima (mesmo que o nome na nota esteja abreviado ou ligeiramente diferente), identifique o nome exato do estabelecimento da lista fornecida no campo 'matchedEstablishmentName'. Priorize sempre os nomes desta lista se forem semanticamente o mesmo estabelecimento.
+{{/if}}
 
 {{#if existingProducts}}
 Para cada item extraído, verifique se ele corresponde a algum dos seguintes produtos que o usuário já cadastrou:
