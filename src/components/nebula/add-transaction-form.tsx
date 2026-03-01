@@ -144,8 +144,9 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     e.preventDefault();
     if (!selectedProduct || !amount || !db) return;
 
-    const totalAmount = parseFloat(amount) * (parseInt(quantity) || 1);
-    const description = `${selectedProduct.name}${parseInt(quantity) > 1 ? ` (x${quantity})` : ''}`;
+    const qty = parseFloat(quantity.replace(',', '.')) || 1;
+    const totalAmount = parseFloat(amount) * qty;
+    const description = `${selectedProduct.name}${qty !== 1 ? ` (x${quantity})` : ''}`;
     
     saveTransaction(description, totalAmount, selectedProduct.category, selectedDate);
     
@@ -215,7 +216,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
           name: match ? match.name : item.name, 
           matchedProduct: match || null, 
           selected: !!match,
-          quantity: 1 
+          quantity: "1" 
         };
       });
 
@@ -233,8 +234,9 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const handleBulkAdd = () => {
     reviewItems.filter(i => i.selected).forEach(item => {
-      const totalVal = item.price * (parseInt(item.quantity) || 1);
-      const desc = `${item.name}${parseInt(item.quantity) > 1 ? ` (x${item.quantity})` : ''} @ ${reviewEstablishment}`;
+      const qty = parseFloat(item.quantity.replace(',', '.')) || 1;
+      const totalVal = item.price * qty;
+      const desc = `${item.name}${qty !== 1 ? ` (x${item.quantity})` : ''} @ ${reviewEstablishment}`;
       saveTransaction(desc, totalVal, item.category, reviewDate);
     });
     toast({ title: "Itens adicionados", description: "As compras foram registradas no seu extrato." });
@@ -398,11 +400,12 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full md:w-auto">
-                <div className="w-full sm:w-20 space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Qtd</Label>
+                <div className="w-full sm:w-24 space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Qtd / Kg</Label>
                   <Input
                     type="number"
-                    min="1"
+                    step="0.001"
+                    min="0.001"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     className="bg-white/5 border-white/10 h-14 rounded-2xl focus:border-accent/50 text-center text-xl font-black text-white"
@@ -581,10 +584,11 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                       {item.selected && (
                         <div className="flex items-center gap-4 pt-2 border-t border-white/5">
                           <div className="flex-1 space-y-1.5">
-                            <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Qtd</Label>
+                            <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Qtd / Kg</Label>
                             <Input 
                               type="number"
-                              min="1"
+                              step="0.001"
+                              min="0.001"
                               value={item.quantity}
                               onChange={(e) => {
                                 const newItems = [...reviewItems];
@@ -597,7 +601,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                           <div className="flex-[2] space-y-1.5">
                             <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Preço Final</Label>
                             <div className="h-10 bg-white/5 rounded-lg flex items-center px-3 font-black text-xs text-accent">
-                              R$ {(item.price * (parseInt(item.quantity) || 1)).toFixed(2)}
+                              R$ {(item.price * (parseFloat(item.quantity.replace(',', '.')) || 1)).toFixed(2)}
                             </div>
                           </div>
                         </div>
