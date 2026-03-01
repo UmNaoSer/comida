@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -157,8 +156,20 @@ export function AdvisorView() {
     setIsAnalyzing(true);
 
     try {
-      const result = await analyzeReceipt({ photoDataUri });
-      setReviewData(result);
+      const existingProductNames = products?.map(p => p.name) || [];
+      const result = await analyzeReceipt({ photoDataUri, existingProducts: existingProductNames });
+      
+      // Post-process with AI suggested names
+      const processedItems = result.items.map(item => {
+        const matchName = item.matchedProductName || item.name;
+        const match = products?.find(p => p.name.toLowerCase() === matchName.toLowerCase());
+        return {
+          ...item,
+          name: match ? match.name : item.name,
+        };
+      });
+
+      setReviewData({ ...result, items: processedItems });
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (error) {

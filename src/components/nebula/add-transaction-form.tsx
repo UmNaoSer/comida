@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -190,11 +189,16 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     
     setIsAnalyzing(true);
     try {
-      const result = await analyzeReceipt({ photoDataUri });
+      const existingProductNames = products?.map(p => p.name) || [];
+      const result = await analyzeReceipt({ photoDataUri, existingProducts: existingProductNames });
       const matched = result.items.map(item => {
-        const match = products?.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+        // Use the AI suggested match name if provided, otherwise fallback to strict search
+        const matchName = item.matchedProductName || item.name;
+        const match = products?.find(p => p.name.toLowerCase() === matchName.toLowerCase());
+        
         return { 
-          ...item, 
+          ...item,
+          name: match ? match.name : item.name, // Use the official name if matched
           matchedProduct: match || null, 
           selected: !!match,
           quantity: 1 
