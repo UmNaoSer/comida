@@ -1,16 +1,14 @@
-
 # Next.js
 .next/
 out/
+build/
 
 # Firebase
 .firebase/
 firebase-debug.log*
 firestore-debug.log*
+pubsub-debug.log*
 ui-debug.log*
-
-# Production
-build/
 
 # Node
 node_modules/
@@ -19,7 +17,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Environment
+# Env
 .env
 .env.local
 .env.development.local
@@ -28,3 +26,4 @@ yarn-error.log*
 
 # OS
 .DS_Store
+Thumbs.db

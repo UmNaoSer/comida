@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Fluxo para análise de notas fiscais de supermercado via IA.
@@ -7,8 +6,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-
-export const maxDuration = 60;
 
 const ReceiptItemSchema = z.object({
   name: z.string().describe('Nome do produto conforme aparece na nota.'),

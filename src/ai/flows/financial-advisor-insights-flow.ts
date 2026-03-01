@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Fluxo Genkit para Insights Financeiros via IA.
@@ -6,8 +5,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-
-export const maxDuration = 60;
 
 const TransactionSchema = z.object({
   id: z.string(),
