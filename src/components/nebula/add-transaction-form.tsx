@@ -13,14 +13,23 @@ import {
   Loader2, 
   X, 
   Check, 
-  AlertCircle 
+  AlertCircle,
+  Utensils,
+  Apple,
+  Beef,
+  Droplets,
+  Wind,
+  Coffee,
+  Laptop,
+  Box,
+  ChevronRight
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { analyzeReceipt, type AnalyzeReceiptOutput } from "@/ai/flows/analyze-receipt-flow";
+import { analyzeReceipt } from "@/ai/flows/analyze-receipt-flow";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -34,12 +43,24 @@ interface AddTransactionFormProps {
   userId: string;
 }
 
+const CATEGORIES = [
+  { id: 'all', name: "Tudo", icon: LayoutPanelLeft },
+  { id: 'Mercado', name: "Mercado", icon: Utensils },
+  { id: 'Hortifruti', name: "Hortifruti", icon: Apple },
+  { id: 'Carnes', name: "Carnes", icon: Beef },
+  { id: 'Higiene', name: "Higiene", icon: Droplets },
+  { id: 'Limpeza', name: "Limpeza", icon: Wind },
+  { id: 'Bebidas', name: "Bebidas", icon: Coffee },
+  { id: 'Eletrônicos', name: "Eletrônicos", icon: Laptop },
+  { id: 'Outros', name: "Outros", icon: Box }
+];
+
 export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [amount, setAmount] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -57,9 +78,11 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const { data: products } = useCollection(productsQuery);
 
-  const filteredProducts = products?.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredProducts = products?.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  }) || [];
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +138,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     setIsAnalyzing(true);
     try {
       const result = await analyzeReceipt({ photoDataUri });
-      // Match scanned items with existing products
       const matched = result.items.map(item => {
         const match = products?.find(p => p.name.toLowerCase() === item.name.toLowerCase());
         return { ...item, matchedProduct: match || null, selected: !!match };
@@ -140,89 +162,126 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="nebula-card border-accent/10 rounded-[2.5rem] overflow-hidden relative p-4 group">
+      <Card className="nebula-card border-accent/10 rounded-[2.5rem] overflow-hidden relative group">
         <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
           <Database className="h-32 w-32 text-accent" />
         </div>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl font-headline font-black flex items-center gap-3 text-accent italic uppercase tracking-tighter">
-            <LayoutPanelLeft className="h-6 w-6 glow-accent" />
-            Novo Lançamento
+          <CardTitle className="text-xl font-headline font-black flex items-center gap-3 text-accent italic uppercase tracking-tighter">
+            <ShoppingBag className="h-5 w-5 glow-accent" />
+            Novo Gasto
           </CardTitle>
           <Button 
             onClick={() => setIsCameraOpen(true)}
             variant="outline"
-            className="h-10 px-4 rounded-xl border-cyan-500/30 text-cyan-400 bg-cyan-500/5 hover:bg-cyan-500/10 font-black text-[10px] uppercase tracking-widest"
+            className="h-9 px-4 rounded-xl border-cyan-500/30 text-cyan-400 bg-cyan-500/5 hover:bg-cyan-500/10 font-black text-[10px] uppercase tracking-widest"
           >
             <Camera className="mr-2 h-4 w-4" />
             Escanear Nota
           </Button>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleManualSubmit} className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2">
-              {/* Modern Product Selector */}
-              <div className="space-y-2 relative">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Produto da Lista</Label>
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <CardContent className="space-y-8">
+          {/* visual category selector */}
+          <div className="space-y-4">
+            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Categorias</Label>
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-3 pb-4">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-3 min-w-[80px] rounded-2xl border transition-all",
+                      selectedCategory === cat.id 
+                        ? "bg-accent border-accent text-accent-foreground shadow-lg shadow-accent/20" 
+                        : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+                    )}
+                  >
+                    <cat.icon className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+
+          <form onSubmit={handleManualSubmit} className="space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Selecionar Produto</Label>
+                <div className="relative w-1/2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar produto..."
+                    placeholder="Filtrar..."
                     value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setIsDropdownOpen(true);
-                    }}
-                    onFocus={() => setIsDropdownOpen(true)}
-                    className="bg-white/5 border-white/5 h-14 pl-12 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all"
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-white/5 border-white/5 h-9 pl-9 rounded-xl focus:border-accent/50 text-xs"
                   />
-                  {isDropdownOpen && filteredProducts.length > 0 && (
-                    <Card className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#121321] border-indigo-500/20 shadow-2xl rounded-2xl overflow-hidden">
-                      <ScrollArea className="h-[200px]">
-                        <div className="p-2">
-                          {filteredProducts.map(p => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedProduct(p);
-                                setSearchTerm(p.name);
-                                setIsDropdownOpen(false);
-                              }}
-                              className="w-full text-left px-4 py-3 rounded-xl hover:bg-accent/10 transition-colors flex items-center justify-between group"
-                            >
-                              <span className="text-sm font-bold text-indigo-100">{p.name}</span>
-                              <span className="text-[9px] uppercase tracking-widest text-muted-foreground group-hover:text-accent">{p.category}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </Card>
-                  )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Valor Pago (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-lg font-black"
-                />
-              </div>
+              <ScrollArea className="h-48 rounded-2xl border border-white/5 bg-white/[0.02]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+                  {filteredProducts.length === 0 ? (
+                    <div className="col-span-full py-12 text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Nenhum produto cadastrado nesta categoria.</p>
+                    </div>
+                  ) : (
+                    filteredProducts.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedProduct(p)}
+                        className={cn(
+                          "flex items-center justify-between px-4 py-3 rounded-xl border transition-all group",
+                          selectedProduct?.id === p.id 
+                            ? "bg-accent/20 border-accent/40 text-accent" 
+                            : "bg-white/5 border-transparent text-foreground hover:bg-white/10"
+                        )}
+                      >
+                        <div className="text-left min-w-0">
+                          <p className="text-xs font-bold truncate">{p.name}</p>
+                          <p className="text-[8px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
+                        </div>
+                        {selectedProduct?.id === p.id && <Check className="h-4 w-4 shrink-0" />}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={!selectedProduct || !amount}
-              className="w-full h-16 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.4em] shadow-xl shadow-accent/20 rounded-2xl transition-all"
-            >
-              Confirmar Gasto
-              <Zap className="ml-3 h-4 w-4" />
-            </Button>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-end gap-6">
+                <div className="flex-1 w-full space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Valor do Item (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-white/5 border-white/5 h-16 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-6 text-2xl font-black text-accent"
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  disabled={!selectedProduct || !amount}
+                  className="w-full sm:w-auto h-16 px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-xl shadow-accent/20 rounded-2xl transition-all"
+                >
+                  Confirmar
+                  <Zap className="ml-3 h-4 w-4" />
+                </Button>
+              </div>
+              
+              {selectedProduct && (
+                <p className="text-[10px] text-accent/60 font-bold uppercase tracking-widest flex items-center gap-2">
+                  <Check className="h-3 w-3" />
+                  Item Selecionado: {selectedProduct.name}
+                </p>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -297,7 +356,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                       item.selected ? "bg-accent text-accent-foreground" : "bg-white/5 text-muted-foreground"
                     )}
                   >
-                    {item.selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {item.selected ? <Check className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </Button>
                 </div>
               ))}
@@ -312,11 +371,5 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function Plus({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>
   );
 }
