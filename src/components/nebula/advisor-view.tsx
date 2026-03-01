@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,7 +34,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { analyzeReceipt } from "@/ai/flows/analyze-receipt-flow";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +68,7 @@ const CATEGORIES = [
 
 export function AdvisorView() {
   const db = useFirestore();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('produtos');
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("todas");
@@ -120,14 +120,48 @@ export function AdvisorView() {
   const { data: allEntries } = useCollection(entriesQuery);
 
   useEffect(() => {
+    let currentStream: MediaStream | null = null;
+
+    const startCamera = async () => {
+      try {
+        // Tenta primeiro a câmera traseira, se falhar (NotFoundError), tenta qualquer câmera
+        try {
+          currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        } catch (e: any) {
+          if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+            currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          } else {
+            throw e;
+          }
+        }
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = currentStream;
+        }
+      } catch (err: any) {
+        console.error("Erro ao acessar câmera:", err);
+        toast({
+          variant: "destructive",
+          title: "Erro na Câmera",
+          description: "Não foi possível acessar a câmera. Verifique as permissões do seu navegador.",
+        });
+        setIsCameraOpen(false);
+      }
+    };
+
     if (isCameraOpen) {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
-        .catch(err => console.error("Erro câmera:", err));
-    } else if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      startCamera();
     }
-  }, [isCameraOpen]);
+
+    return () => {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      if (videoRef.current?.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraOpen, toast]);
 
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current || !db) return;
