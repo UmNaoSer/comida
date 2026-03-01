@@ -31,7 +31,8 @@ import {
   ShoppingBasket,
   Dog,
   Gamepad2,
-  Bus
+  Bus,
+  Edit2
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, orderBy, limit } from "firebase/firestore";
@@ -89,6 +90,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewItems, setReviewItems] = useState<any[]>([]);
+  const [reviewEstablishment, setReviewEstablishment] = useState("");
+  const [reviewDate, setReviewDate] = useState<Date>(new Date());
 
   // Fetch products
   const productsQuery = useMemoFirebase(() => {
@@ -190,9 +193,16 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       const result = await analyzeReceipt({ photoDataUri });
       const matched = result.items.map(item => {
         const match = products?.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-        return { ...item, matchedProduct: match || null, selected: !!match };
+        return { 
+          ...item, 
+          matchedProduct: match || null, 
+          selected: !!match,
+          quantity: 1 
+        };
       });
       setReviewItems(matched);
+      setReviewEstablishment(result.establishmentName || "");
+      setReviewDate(selectedDate);
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (e) {
@@ -204,7 +214,9 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const handleBulkAdd = () => {
     reviewItems.filter(i => i.selected).forEach(item => {
-      saveTransaction(item.name, item.price, item.category, selectedDate);
+      const totalVal = item.price * (parseInt(item.quantity) || 1);
+      const desc = `${item.name}${parseInt(item.quantity) > 1 ? ` (x${item.quantity})` : ''} @ ${reviewEstablishment}`;
+      saveTransaction(desc, totalVal, item.category, reviewDate);
     });
     toast({ title: "Itens adicionados", description: "As compras foram registradas no seu extrato." });
     setIsReviewOpen(false);
@@ -469,59 +481,126 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
       {/* Review Dialog */}
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="max-w-2xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[3rem] p-0 overflow-hidden shadow-2xl">
-          <DialogHeader className="p-10 pb-6 bg-gradient-to-br from-indigo-950/40 to-transparent">
-            <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-accent flex items-center gap-4 italic">
-              <ShoppingBag className="h-8 w-8 glow-accent" />
-              Itens da Nota
+        <DialogContent className="max-w-2xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2.5rem] sm:rounded-[3rem] p-0 overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
+          <DialogHeader className="p-8 sm:p-10 pb-6 bg-gradient-to-br from-indigo-950/40 to-transparent flex-shrink-0">
+            <DialogTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-accent flex items-center gap-4 italic">
+              <Edit2 className="h-6 w-6 sm:h-8 sm:w-8" />
+              Revisar Notinha
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[50vh] px-10 py-6">
-            <div className="grid gap-4">
-              {reviewItems.map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className={cn(
-                    "p-6 rounded-[2rem] border-2 transition-all flex items-center justify-between gap-6",
-                    item.matchedProduct 
-                      ? "bg-accent/5 border-accent/20" 
-                      : "bg-white/[0.02] border-white/5 opacity-50"
-                  )}
-                >
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="font-black text-base truncate">{item.name}</p>
-                    <div className="flex items-center gap-3">
-                      <p className="text-xs font-black text-accent">R$ {item.price.toFixed(2)}</p>
-                      {!item.matchedProduct && (
-                        <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                          <AlertCircle className="h-3 w-3" /> não cadastrado
-                        </span>
+
+          <ScrollArea className="flex-grow px-6 sm:px-10 py-4">
+            <div className="space-y-8">
+              {/* Header Info: Establishment & Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/[0.03] p-6 rounded-[2rem] border border-white/5">
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Estabelecimento</Label>
+                  <Input 
+                    value={reviewEstablishment}
+                    onChange={(e) => setReviewEstablishment(e.target.value)}
+                    className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-accent/40 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Data da Compra</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-full bg-white/5 border border-white/10 h-12 rounded-xl flex items-center justify-between px-4 text-white hover:bg-white/10 transition-all">
+                        <span className="text-sm font-bold">{format(reviewDate, "dd/MM/yyyy")}</span>
+                        <CalendarIcon className="h-4 w-4 text-accent" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-card border-white/10" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={reviewDate}
+                        onSelect={(date) => date && setReviewDate(date)}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-4">
+                <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-300/60 ml-1">Itens Extraídos ({reviewItems.length})</Label>
+                <div className="grid gap-4">
+                  {reviewItems.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className={cn(
+                        "p-5 rounded-[2rem] border-2 transition-all flex flex-col gap-4",
+                        item.selected 
+                          ? "bg-accent/5 border-accent/20" 
+                          : "bg-white/[0.02] border-white/5"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <Input 
+                            value={item.name}
+                            onChange={(e) => {
+                              const newItems = [...reviewItems];
+                              newItems[idx].name = e.target.value;
+                              setReviewItems(newItems);
+                            }}
+                            className="bg-transparent border-none p-0 h-auto text-sm sm:text-base font-black truncate focus-visible:ring-0"
+                          />
+                          <p className="text-[10px] font-black uppercase tracking-widest text-accent mt-1">R$ {item.price.toFixed(2)}</p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            const newItems = [...reviewItems];
+                            newItems[idx].selected = !newItems[idx].selected;
+                            setReviewItems(newItems);
+                          }}
+                          className={cn(
+                            "h-10 w-10 rounded-xl transition-all flex-shrink-0",
+                            item.selected ? "bg-accent text-accent-foreground" : "bg-white/5 text-muted-foreground"
+                          )}
+                        >
+                          {item.selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        </Button>
+                      </div>
+
+                      {item.selected && (
+                        <div className="flex items-center gap-4 pt-2 border-t border-white/5">
+                          <div className="flex-1 space-y-1.5">
+                            <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Qtd</Label>
+                            <Input 
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const newItems = [...reviewItems];
+                                newItems[idx].quantity = e.target.value;
+                                setReviewItems(newItems);
+                              }}
+                              className="bg-white/5 border-white/10 h-10 rounded-lg text-center font-bold"
+                            />
+                          </div>
+                          <div className="flex-[2] space-y-1.5">
+                            <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Preço Final</Label>
+                            <div className="h-10 bg-white/5 rounded-lg flex items-center px-3 font-black text-xs text-accent">
+                              R$ {(item.price * (parseInt(item.quantity) || 1)).toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    disabled={!item.matchedProduct}
-                    onClick={() => {
-                      const newItems = [...reviewItems];
-                      newItems[idx].selected = !newItems[idx].selected;
-                      setReviewItems(newItems);
-                    }}
-                    className={cn(
-                      "h-12 w-12 rounded-2xl transition-all",
-                      item.selected ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20" : "bg-white/5 text-muted-foreground"
-                    )}
-                  >
-                    {item.selected ? <Check className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                  </Button>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </ScrollArea>
-          <DialogFooter className="p-10 pt-6 border-t border-white/5 bg-white/[0.02]">
-            <Button variant="ghost" onClick={() => setIsReviewOpen(false)} className="h-16 px-8 font-black uppercase tracking-widest text-xs hover:bg-white/5">Descartar</Button>
-            <Button onClick={handleBulkAdd} className="h-16 px-12 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-2xl shadow-accent/30 active:scale-95 transition-all">
+
+          <DialogFooter className="p-8 sm:p-10 pt-6 border-t border-white/5 bg-white/[0.02] flex-shrink-0">
+            <Button variant="ghost" onClick={() => setIsReviewOpen(false)} className="h-14 sm:h-16 px-6 font-black uppercase tracking-widest text-[10px] hover:bg-white/5">Descartar</Button>
+            <Button onClick={handleBulkAdd} className="h-14 sm:h-16 px-8 sm:px-12 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-2xl shadow-accent/30 active:scale-95 transition-all">
               Confirmar ({reviewItems.filter(i => i.selected).length})
             </Button>
           </DialogFooter>
