@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -9,19 +10,38 @@ import { FlowChart } from "@/components/nebula/flow-chart";
 import { AIInsights } from "@/components/nebula/ai-insights";
 import { AdvisorView } from "@/components/nebula/advisor-view";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
-import { LayoutDashboard, History, Loader2, Search, ArrowRight } from "lucide-react";
+import { LayoutDashboard, History, Loader2, Search, ArrowRight, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getYear } from "date-fns";
+import { getYear, getMonth } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
 const GUEST_USER_ID = "guest-protocol-v1";
 
+const MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
 export default function NebulaFinanx() {
   const db = useFirestore();
   const [view, setView] = useState<View>('dashboard');
   const [selectedYear, setSelectedYear] = useState<string>(getYear(new Date()).toString());
+  const [selectedMonth, setSelectedMonth] = useState<string>(getMonth(new Date()).toString());
+  const [isAllMonthTxsOpen, setIsAllMonthTxsOpen] = useState(false);
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -43,22 +63,31 @@ export default function NebulaFinanx() {
 
   const txs = transactions || [];
   
-  // Filter transactions by selected year
-  const filteredTxs = txs.filter(t => {
+  // Filter transactions by selected year for summary cards
+  const filteredYearTxs = txs.filter(t => {
     const txYear = getYear(new Date(t.date)).toString();
     return txYear === selectedYear;
   });
 
-  const totalIncome = filteredTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = filteredTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  // Filter transactions for the selected month and year
+  const monthTxs = txs.filter(t => {
+    const d = new Date(t.date);
+    return d.getFullYear().toString() === selectedYear && d.getMonth().toString() === selectedMonth;
+  });
+
+  const totalIncome = filteredYearTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = filteredYearTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const totalBalance = totalIncome - totalExpenses;
 
   // Accurate Monthly Average: Divide year total by number of months with entries in that year
-  const monthsWithEntries = new Set(filteredTxs.map(t => new Date(t.date).getMonth())).size;
+  const monthsWithEntries = new Set(filteredYearTxs.map(t => new Date(t.date).getMonth())).size;
   const monthlyAverage = monthsWithEntries > 0 ? totalBalance / monthsWithEntries : 0;
 
-  // Recent transactions for the dashboard (limit to 5) - uses all txs for historical view
+  // Recent transactions for the dashboard (global top 5)
   const recentTxs = txs.slice(0, 5);
+
+  const currentYear = getYear(new Date());
+  const yearOptions = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-headline">
@@ -107,26 +136,75 @@ export default function NebulaFinanx() {
 
             <AIInsights transactions={txs} />
 
-            {/* Últimos Lançamentos Section */}
+            {/* Lançamentos Section */}
             <Card className="bg-indigo-950/10 border-indigo-500/10 rounded-[2rem] overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.05)]">
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="text-lg font-bold tracking-tight">Últimos Lançamentos</CardTitle>
-                <button 
-                  onClick={() => setView('transactions')}
-                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest transition-colors flex items-center gap-1 group"
-                >
-                  Ver Todos
-                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                </button>
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg font-bold tracking-tight">Lançamentos</CardTitle>
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-black">Total: {txs.length} registros</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1">
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                      <SelectTrigger className="h-7 border-none bg-transparent p-0 text-[10px] font-black uppercase tracking-widest focus:ring-0 w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-950 border-white/10">
+                        {MONTHS.map((month, idx) => (
+                          <SelectItem key={month} value={idx.toString()} className="text-[10px] font-bold">{month}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1">
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                      <SelectTrigger className="h-7 border-none bg-transparent p-0 text-[10px] font-black uppercase tracking-widest focus:ring-0 w-16">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-950 border-white/10">
+                        {yearOptions.map(year => (
+                          <SelectItem key={year} value={year} className="text-[10px] font-bold">{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 {recentTxs.length === 0 ? (
                   <div className="py-12 text-center">
                     <p className="text-[11px] text-indigo-300/40 uppercase tracking-[0.3em] font-medium">Nenhuma atividade recente.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <TransactionList transactions={recentTxs} userId={GUEST_USER_ID} compact />
+                  <div className="space-y-6">
+                    <div className="space-y-1">
+                       <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-300/60 ml-1 mb-2">Últimos 5 globais</p>
+                       <TransactionList transactions={recentTxs} userId={GUEST_USER_ID} compact />
+                    </div>
+
+                    <Collapsible open={isAllMonthTxsOpen} onOpenChange={setIsAllMonthTxsOpen} className="space-y-4">
+                      <CollapsibleTrigger asChild>
+                        <button className="w-full h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between px-6 hover:bg-white/10 transition-all group">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-200">
+                            Exibir todos de {MONTHS[parseInt(selectedMonth)]}
+                          </span>
+                          <ChevronDown className={cn("h-4 w-4 text-indigo-400 transition-transform duration-300", isAllMonthTxsOpen && "rotate-180")} />
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-4 animate-in slide-in-from-top-2">
+                        {monthTxs.length === 0 ? (
+                          <div className="py-8 text-center border-2 border-dashed border-white/5 rounded-2xl">
+                             <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Nenhum lançamento em {MONTHS[parseInt(selectedMonth)]} de {selectedYear}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-300/60 ml-1 mb-2">Todos do mês ({monthTxs.length})</p>
+                             <TransactionList transactions={monthTxs} userId={GUEST_USER_ID} compact />
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 )}
               </CardContent>
