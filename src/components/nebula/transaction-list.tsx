@@ -83,28 +83,34 @@ export function TransactionList({ transactions, userId, showAll = false, compact
     return format(date, "dd MMM yyyy", { locale: ptBR });
   };
 
-  const getIconContainer = (tx: Transaction) => {
-    const categoryInfo = tx.category ? CATEGORY_DATA[tx.category] : null;
-    const IconComponent = categoryInfo ? categoryInfo.icon : (tx.type === 'income' ? ArrowUpRight : ArrowDownLeft);
-    const bgColor = categoryInfo ? categoryInfo.color : (tx.type === 'income' ? 'bg-income/10' : 'bg-expense/10');
-    const textColor = categoryInfo ? 'text-gray-900' : (tx.type === 'income' ? 'text-income' : 'text-expense');
-
-    return (
-      <div className={cn("p-2 rounded-xl", bgColor, textColor)}>
-        <IconComponent className="h-4 w-4" />
-      </div>
+  const getCategoryInfo = (category: string | undefined) => {
+    if (!category) return null;
+    // Tenta correspondência exata
+    if (CATEGORY_DATA[category]) return CATEGORY_DATA[category];
+    
+    // Tenta correspondência sem espaços e ignorando maiúsculas
+    const normalized = category.trim().toLowerCase();
+    const foundKey = Object.keys(CATEGORY_DATA).find(
+      key => key.toLowerCase() === normalized
     );
+    
+    return foundKey ? CATEGORY_DATA[foundKey] : null;
   };
 
-  const getLargeIconContainer = (tx: Transaction) => {
-    const categoryInfo = tx.category ? CATEGORY_DATA[tx.category] : null;
+  const getIconContainer = (tx: Transaction, isLarge = false) => {
+    const categoryInfo = getCategoryInfo(tx.category);
     const IconComponent = categoryInfo ? categoryInfo.icon : (tx.type === 'income' ? ArrowUpRight : ArrowDownLeft);
     const bgColor = categoryInfo ? categoryInfo.color : (tx.type === 'income' ? 'bg-income/10' : 'bg-expense/10');
     const textColor = categoryInfo ? 'text-gray-900' : (tx.type === 'income' ? 'text-income' : 'text-expense');
 
     return (
-      <div className={cn("p-3 rounded-2xl transition-all duration-300 group-hover:rotate-12", bgColor, textColor)}>
-        <IconComponent className="h-5 w-5" />
+      <div className={cn(
+        "transition-all duration-300",
+        isLarge ? "p-3 rounded-2xl group-hover:rotate-12" : "p-2 rounded-xl",
+        bgColor,
+        textColor
+      )}>
+        <IconComponent className={isLarge ? "h-5 w-5" : "h-4 w-4"} />
       </div>
     );
   };
@@ -118,7 +124,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
             className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors group"
           >
             <div className="flex items-center gap-4">
-              {getIconContainer(tx)}
+              {getIconContainer(tx, false)}
               <div>
                 <p className="font-bold text-sm text-foreground/90">{tx.description}</p>
                 <p className="text-[9px] font-mono text-muted-foreground uppercase">{formatDate(tx.date)}</p>
@@ -162,7 +168,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                 className="flex items-center justify-between p-5 hover:bg-white/[0.03] transition-colors group relative"
               >
                 <div className="flex items-center gap-5">
-                  {getLargeIconContainer(tx)}
+                  {getIconContainer(tx, true)}
                   <div>
                     <p className="font-bold text-foreground/90 tracking-tight">{tx.description}</p>
                     <div className="flex items-center gap-3 mt-0.5">
