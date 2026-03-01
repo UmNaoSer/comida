@@ -1,73 +1,56 @@
+
 'use server';
 /**
- * @fileOverview Este arquivo implementa um fluxo Genkit para a ferramenta de Insights Financeiros via IA.
- * Analisa transações financeiras recentes para destacar padrões simples de gastos
- * e fornecer dicas financeiras genéricas e relevantes.
- *
- * - getFinancialAdvisorInsights - Função que busca insights financeiros da IA.
- * - FinancialAdvisorInsightsInput - O tipo de entrada para a função getFinancialAdvisorInsights.
- * - FinancialAdvisorInsightsOutput - O tipo de retorno para a função getFinancialAdvisorInsights.
+ * @fileOverview Fluxo Genkit para Insights Financeiros via IA.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+export const maxDuration = 60;
+
 const TransactionSchema = z.object({
-  id: z.string().describe('Identificador único da transação.'),
-  description: z.string().describe('Uma breve descrição da transação.'),
-  amount: z.number().describe('O valor da transação.'),
-  type: z.enum(['income', 'expense']).describe('O tipo da transação: "income" (entrada) ou "expense" (saída).'),
-  date: z.string().datetime().describe('A data da transação no formato ISO 8601.'),
+  id: z.string(),
+  description: z.string(),
+  amount: z.number(),
+  type: z.enum(['income', 'expense']),
+  date: z.string(),
 });
 
 const FinancialAdvisorInsightsInputSchema = z.object({
-  transactions: z.array(TransactionSchema).describe('Um array de transações financeiras recentes para analisar.'),
+  transactions: z.array(TransactionSchema),
 });
 export type FinancialAdvisorInsightsInput = z.infer<typeof FinancialAdvisorInsightsInputSchema>;
 
 const FinancialAdvisorInsightsOutputSchema = z.object({
-  spendingPatterns: z.string().describe('Um resumo de padrões simples de gastos identificados a partir das transações fornecidas.'),
-  financialTips: z.string().describe('Dicas financeiras genéricas e relevantes baseadas nas transações fornecidas.'),
+  spendingPatterns: z.string(),
+  financialTips: z.string(),
 });
 export type FinancialAdvisorInsightsOutput = z.infer<typeof FinancialAdvisorInsightsOutputSchema>;
 
 export async function getFinancialAdvisorInsights(
   input: FinancialAdvisorInsightsInput
 ): Promise<FinancialAdvisorInsightsOutput> {
-  return financialAdvisorInsightsFlow(input);
+  try {
+    const {output} = await financialAdvisorInsightsPrompt(input);
+    if (!output) {
+      throw new Error('Falha ao obter insights financeiros da IA.');
+    }
+    return output;
+  } catch (error: any) {
+    console.error("Erro no fluxo financialAdvisorInsights:", error);
+    throw new Error(error.message || 'Erro ao gerar insights financeiros.');
+  }
 }
 
 const financialAdvisorInsightsPrompt = ai.definePrompt({
   name: 'financialAdvisorInsightsPrompt',
   input: {schema: FinancialAdvisorInsightsInputSchema},
   output: {schema: FinancialAdvisorInsightsOutputSchema},
-  prompt: `Você é um consultor financeiro especializado. Sua tarefa é analisar as transações financeiras recentes fornecidas.
-Com base nesta análise, você deve identificar padrões simples de gastos e fornecer dicas financeiras genéricas e relevantes para ajudar o usuário a entender e gerenciar melhor suas finanças pessoais.
-
-Aqui estão as transações recentes:
+  prompt: `Analise as transações financeiras e forneça padrões de gastos e dicas.
+Transações:
 {{#each transactions}}
 - Data: {{date}}, Tipo: {{type}}, Valor: {{amount}}, Descrição: {{description}}
 {{/each}}
-
-Por favor, forneça:
-1. Um resumo dos padrões simples de gastos que você observa.
-2. Dicas financeiras genéricas e relevantes.
-
-O seu texto DEVE estar em Português do Brasil (pt-BR).
-Formate sua resposta como um objeto JSON com os campos 'spendingPatterns' e 'financialTips', conforme descrito no esquema de saída.`,
+Idioma: Português do Brasil.`,
 });
-
-const financialAdvisorInsightsFlow = ai.defineFlow(
-  {
-    name: 'financialAdvisorInsightsFlow',
-    inputSchema: FinancialAdvisorInsightsInputSchema,
-    outputSchema: FinancialAdvisorInsightsOutputSchema,
-  },
-  async (input) => {
-    const {output} = await financialAdvisorInsightsPrompt(input);
-    if (!output) {
-      throw new Error('Falha ao obter insights financeiros da IA.');
-    }
-    return output;
-  }
-);

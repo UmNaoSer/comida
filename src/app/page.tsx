@@ -27,9 +27,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-// Vercel/NextJS optimization: increase timeout for AI flows which can take longer
-export const maxDuration = 60;
-
 type View = 'dashboard' | 'transactions' | 'advisor';
 
 const GUEST_USER_ID = "guest-protocol-v1";
@@ -44,7 +41,6 @@ export default function NebulaFinanx() {
   const [view, setView] = useState<View>('dashboard');
   const [mounted, setMounted] = useState(false);
   
-  // Hydration safe state initialization
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [isAllMonthTxsOpen, setIsAllMonthTxsOpen] = useState(false);
@@ -77,8 +73,8 @@ export default function NebulaFinanx() {
   const txs = transactions || [];
   
   const filteredYearTxs = txs.filter(t => {
-    const txYear = getYear(new Date(t.date)).toString();
-    return txYear === selectedYear;
+    const d = new Date(t.date);
+    return d.getFullYear().toString() === selectedYear;
   });
 
   const monthTxs = txs.filter(t => {
@@ -94,7 +90,6 @@ export default function NebulaFinanx() {
   const monthlyAverage = monthsWithEntries > 0 ? totalBalance / monthsWithEntries : 0;
 
   const recentTxs = txs.slice(0, 5);
-
   const currentYear = getYear(new Date());
   const yearOptions = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 

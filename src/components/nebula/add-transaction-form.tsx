@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
 
-  // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -91,10 +91,11 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const [reviewDate, setReviewDate] = useState<Date>(new Date());
 
   useEffect(() => {
+    setSelectedDate(new Date());
+    setReviewDate(new Date());
     setMounted(true);
   }, []);
 
-  // Fetch products
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, "users", userId, "products"), orderBy("name"));
@@ -102,7 +103,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const { data: products } = useCollection(productsQuery);
 
-  // Fetch establishments for matching
   const establishmentsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, "users", userId, "establishments"), orderBy("name"));
@@ -157,7 +157,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     }, { merge: true });
   };
 
-  // Camera logic
   useEffect(() => {
     let currentStream: MediaStream | null = null;
 
@@ -174,7 +173,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         try {
           currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch (e) {
-          // Fallback to any camera
           currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         
@@ -186,7 +184,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         toast({
           variant: "destructive",
           title: "Erro na Câmera",
-          description: "Não foi possível acessar a câmera. Verifique as permissões do seu navegador.",
+          description: "Não foi possível acessar a câmera. Verifique as permissões.",
         });
         setIsCameraOpen(false);
       }
@@ -208,9 +206,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    // Aguarda o vídeo estar pronto
     if (video.readyState !== 4) {
-      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde o vídeo carregar e tente novamente." });
+      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde o vídeo carregar." });
       return;
     }
 
@@ -246,12 +243,12 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
       setReviewItems(matched);
       setReviewEstablishment(result.matchedEstablishmentName || result.establishmentName || "");
-      setReviewDate(selectedDate);
+      setReviewDate(new Date());
       setIsReviewOpen(true);
       setIsCameraOpen(false);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro na análise da nota:", e);
-      toast({ variant: "destructive", title: "Erro na leitura", description: "Ocorreu um problema ao processar a imagem. Tente novamente." });
+      toast({ variant: "destructive", title: "Erro na leitura", description: e.message || "Problema ao processar imagem." });
     } finally {
       setIsAnalyzing(false);
     }
@@ -265,7 +262,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       const desc = `${item.name} (${item.quantity}${unitLabel}) @ ${reviewEstablishment}`;
       saveTransaction(desc, totalVal, item.category, reviewDate);
     });
-    toast({ title: "Itens adicionados", description: "As compras foram registradas no seu extrato." });
+    toast({ title: "Itens adicionados", description: "Registros realizados com sucesso." });
     setIsReviewOpen(false);
   };
 
@@ -373,8 +370,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                         className={cn(
                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
                           selectedProduct?.id === p.id 
-                            ? "bg-accent text-accent-foreground shadow-lg shadow-accent/30 rotate-0" 
-                            : "bg-white/5 text-muted-foreground hover:text-white rotate-90"
+                            ? "bg-accent text-accent-foreground shadow-lg shadow-accent/30" 
+                            : "bg-white/5 text-muted-foreground hover:text-white"
                         )}
                       >
                         {selectedProduct?.id === p.id ? <Check className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
@@ -390,13 +387,13 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                             setSelectedProduct(p);
                             setAmount(sp.price.toString());
                             setQuantity("1");
-                            setIsKg(false);
+                            setIsKg(sp.unit === "Kg");
                           }}
-                          className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all group/price"
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all"
                         >
-                          <Store className="h-3 w-3 opacity-40 group-hover/price:opacity-100" />
+                          <Store className="h-3 w-3" />
                           <span>{sp.storeName}</span>
-                          <span className="text-accent group-hover/price:text-accent-foreground">R$ {sp.price.toFixed(2)}</span>
+                          <span className="text-accent">R$ {sp.price.toFixed(2)}</span>
                         </button>
                       ))}
                     </div>

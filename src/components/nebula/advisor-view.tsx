@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,19 +76,16 @@ export function AdvisorView() {
   const [filterCategory, setFilterCategory] = useState("todas");
   const [mounted, setMounted] = useState(false);
   
-  // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Review Modal State
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewItems, setReviewItems] = useState<any[]>([]);
   const [reviewEstablishment, setReviewEstablishment] = useState("");
   const [reviewDate, setReviewDate] = useState<Date>(new Date());
 
-  // States for the "Add Product" form
   const [formEstId, setFormEstId] = useState("");
   const [formProdName, setFormProdName] = useState("");
   const [formPrice, setFormPrice] = useState("");
@@ -95,12 +93,12 @@ export function AdvisorView() {
   const [formDate, setFormDate] = useState<Date | undefined>(undefined);
   const [formIsKg, setFormIsKg] = useState(false);
 
-  // Establishment Registration State
   const [newEstName, setNewEstName] = useState("");
 
   useEffect(() => {
-    setMounted(true);
     setFormDate(new Date());
+    setReviewDate(new Date());
+    setMounted(true);
   }, []);
 
   const estQuery = useMemoFirebase(() => {
@@ -148,7 +146,7 @@ export function AdvisorView() {
         toast({
           variant: "destructive",
           title: "Erro na Câmera",
-          description: "Não foi possível acessar a câmera. Verifique as permissões.",
+          description: "Não foi possível acessar a câmera.",
         });
         setIsCameraOpen(false);
       }
@@ -171,7 +169,7 @@ export function AdvisorView() {
     const canvas = canvasRef.current;
 
     if (video.readyState !== 4) {
-      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde o vídeo carregar e tente novamente." });
+      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde o vídeo." });
       return;
     }
 
@@ -207,9 +205,9 @@ export function AdvisorView() {
       setReviewDate(new Date());
       setIsReviewOpen(true);
       setIsCameraOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro na análise:", error);
-      toast({ variant: "destructive", title: "Erro na leitura", description: "Não foi possível analisar a nota. Tente novamente." });
+      toast({ variant: "destructive", title: "Erro na leitura", description: error.message || "Falha na análise." });
     } finally {
       setIsAnalyzing(false);
     }
@@ -257,7 +255,7 @@ export function AdvisorView() {
       }, { merge: true });
     });
 
-    toast({ title: "Nota Processada", description: "Histórico de preços atualizado." });
+    toast({ title: "Nota Processada", description: "Histórico atualizado." });
     setIsReviewOpen(false);
   };
 
@@ -293,7 +291,7 @@ export function AdvisorView() {
     setFormProdName("");
     setFormPrice("");
     setFormIsKg(false);
-    toast({ title: "Produto salvo", description: "Preço registrado com sucesso." });
+    toast({ title: "Produto salvo" });
   };
 
   const handleDeleteProductGroup = (productName: string) => {
