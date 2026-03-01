@@ -19,13 +19,14 @@ const AnalyzeReceiptInputSchema = z.object({
   existingProducts: z.array(z.string()).optional().describe("Lista de nomes de produtos cadastrados."),
   existingEstablishments: z.array(z.string()).optional().describe("Lista de nomes de estabelecimentos cadastrados."),
 });
-export type AnalyzeReceiptInput = z.infer<typeof AnalyzeReceiptInputSchema>;
 
 const AnalyzeReceiptOutputSchema = z.object({
   establishmentName: z.string().describe('Nome do estabelecimento extraído da nota.'),
   matchedEstablishmentName: z.string().optional().describe('Nome do estabelecimento correspondente na lista do usuário.'),
   items: z.array(ReceiptItemSchema).describe('Lista de produtos e preços encontrados.'),
 });
+
+export type AnalyzeReceiptInput = z.infer<typeof AnalyzeReceiptInputSchema>;
 export type AnalyzeReceiptOutput = z.infer<typeof AnalyzeReceiptOutputSchema>;
 
 const analyzeReceiptPrompt = ai.definePrompt({

@@ -17,13 +17,26 @@ const TransactionSchema = z.object({
 const FinancialAdvisorInsightsInputSchema = z.object({
   transactions: z.array(TransactionSchema),
 });
-export type FinancialAdvisorInsightsInput = z.infer<typeof FinancialAdvisorInsightsInputSchema>;
 
 const FinancialAdvisorInsightsOutputSchema = z.object({
   spendingPatterns: z.string(),
   financialTips: z.string(),
 });
+
+export type FinancialAdvisorInsightsInput = z.infer<typeof FinancialAdvisorInsightsInputSchema>;
 export type FinancialAdvisorInsightsOutput = z.infer<typeof FinancialAdvisorInsightsOutputSchema>;
+
+const financialAdvisorInsightsPrompt = ai.definePrompt({
+  name: 'financialAdvisorInsightsPrompt',
+  input: {schema: FinancialAdvisorInsightsInputSchema},
+  output: {schema: FinancialAdvisorInsightsOutputSchema},
+  prompt: `Analise as transações financeiras e forneça padrões de gastos e dicas.
+Transações:
+{{#each transactions}}
+- Data: {{date}}, Tipo: {{type}}, Valor: {{amount}}, Descrição: {{description}}
+{{/each}}
+Idioma: Português do Brasil.`,
+});
 
 export async function getFinancialAdvisorInsights(
   input: FinancialAdvisorInsightsInput
@@ -39,15 +52,3 @@ export async function getFinancialAdvisorInsights(
     throw new Error(error.message || 'Erro ao gerar insights financeiros.');
   }
 }
-
-const financialAdvisorInsightsPrompt = ai.definePrompt({
-  name: 'financialAdvisorInsightsPrompt',
-  input: {schema: FinancialAdvisorInsightsInputSchema},
-  output: {schema: FinancialAdvisorInsightsOutputSchema},
-  prompt: `Analise as transações financeiras e forneça padrões de gastos e dicas.
-Transações:
-{{#each transactions}}
-- Data: {{date}}, Tipo: {{type}}, Valor: {{amount}}, Descrição: {{description}}
-{{/each}}
-Idioma: Português do Brasil.`,
-});
