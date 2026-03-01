@@ -84,6 +84,7 @@ export function AdvisorView() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewItems, setReviewItems] = useState<any[]>([]);
   const [reviewEstablishment, setReviewEstablishment] = useState("");
+  const [reviewDate, setReviewDate] = useState<Date>(new Date());
 
   // States for the "Add Product" form
   const [formEstId, setFormEstId] = useState("");
@@ -124,26 +125,20 @@ export function AdvisorView() {
 
     const startCamera = async () => {
       try {
-        // Tenta primeiro a câmera traseira, se falhar (NotFoundError), tenta qualquer câmera
         try {
           currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         } catch (e: any) {
-          if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-            currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          } else {
-            throw e;
-          }
+          currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         
         if (videoRef.current) {
           videoRef.current.srcObject = currentStream;
         }
       } catch (err: any) {
-        console.error("Erro ao acessar câmera:", err);
         toast({
           variant: "destructive",
           title: "Erro na Câmera",
-          description: "Não foi possível acessar a câmera. Verifique as permissões do seu navegador.",
+          description: "Não foi possível acessar a câmera. Verifique as permissões.",
         });
         setIsCameraOpen(false);
       }
@@ -165,8 +160,14 @@ export function AdvisorView() {
 
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current || !db) return;
-    const canvas = canvasRef.current;
     const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde um momento e tente novamente." });
+      return;
+    }
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
@@ -185,15 +186,22 @@ export function AdvisorView() {
       const processed = result.items.map(item => {
         const matchName = item.matchedProductName || item.name;
         const match = products?.find(p => p.name.toLowerCase() === matchName.toLowerCase());
-        return { ...item, name: match ? match.name : item.name, isKg: false };
+        return { 
+          ...item, 
+          name: match ? match.name : item.name, 
+          selected: true,
+          quantity: "1",
+          isKg: false 
+        };
       });
 
       setReviewItems(processed);
       setReviewEstablishment(result.matchedEstablishmentName || result.establishmentName || "");
+      setReviewDate(new Date());
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (error) {
-      toast({ variant: "destructive", title: "Erro na leitura", description: "Tente novamente." });
+      toast({ variant: "destructive", title: "Erro na leitura", description: "Não foi possível analisar a nota. Tente novamente." });
     } finally {
       setIsAnalyzing(false);
     }
@@ -216,7 +224,7 @@ export function AdvisorView() {
       }, { merge: true });
     }
 
-    reviewItems.forEach(item => {
+    reviewItems.filter(i => i.selected).forEach(item => {
       const normalizedName = item.name.trim().toLowerCase();
       const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
       let prodId = existingProduct ? existingProduct.id : Math.random().toString(36).substr(2, 9);
@@ -236,7 +244,7 @@ export function AdvisorView() {
         storeId: storeId,
         storeName: reviewEstablishment,
         price: item.price,
-        date: new Date().toISOString(),
+        date: reviewDate.toISOString(),
         unit: item.isKg ? "Kg" : "Un"
       }, { merge: true });
     });
@@ -277,6 +285,7 @@ export function AdvisorView() {
     setFormProdName("");
     setFormPrice("");
     setFormIsKg(false);
+    toast({ title: "Produto salvo", description: "Preço registrado com sucesso." });
   };
 
   const handleDeleteProductGroup = (productName: string) => {
@@ -317,82 +326,146 @@ export function AdvisorView() {
       {isCameraOpen && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-6 animate-in fade-in">
           <button onClick={() => setIsCameraOpen(false)} className="absolute top-8 right-8 text-white/50 hover:text-white p-2"><X className="h-8 w-8" /></button>
-          <div className="w-full max-w-2xl aspect-[3/4] bg-indigo-950/20 border-2 border-dashed border-white/20 rounded-3xl overflow-hidden relative">
+          <div className="w-full max-w-2xl aspect-[3/4] bg-indigo-950/20 border-2 border-dashed border-white/20 rounded-3xl overflow-hidden relative shadow-2xl">
             <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
             <canvas ref={canvasRef} className="hidden" />
             {isAnalyzing && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
-                <Loader2 className="h-12 w-12 text-cyan-400 animate-spin" />
-                <p className="text-cyan-400 font-black uppercase tracking-[0.3em] text-sm">Lendo Nota...</p>
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center gap-6">
+                <Loader2 className="h-16 w-16 text-cyan-400 animate-spin" />
+                <p className="text-cyan-400 font-black uppercase tracking-[0.5em] text-sm animate-pulse">Lendo Nota...</p>
               </div>
             )}
           </div>
           {!isAnalyzing && (
-            <button onClick={captureAndAnalyze} className="mt-8 w-20 h-20 rounded-full border-4 border-white flex items-center justify-center group active:scale-95 transition-all">
-              <div className="w-16 h-16 rounded-full bg-white group-hover:bg-cyan-400 transition-colors" />
+            <button onClick={captureAndAnalyze} className="mt-8 w-24 h-24 rounded-full border-[6px] border-white/20 flex items-center justify-center group active:scale-95 transition-all hover:border-white">
+              <div className="w-16 h-16 rounded-full bg-white group-hover:bg-cyan-400 transition-colors scale-90 group-hover:scale-100" />
             </button>
           )}
         </div>
       )}
 
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="max-w-3xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2rem] p-0 overflow-hidden">
-          <DialogHeader className="p-8 pb-4"><DialogTitle className="text-2xl font-black uppercase text-accent italic flex items-center gap-3"><Edit2 className="h-6 w-6" />Revisar Notinha</DialogTitle></DialogHeader>
-          <ScrollArea className="max-h-[60vh] px-8 py-4">
+        <DialogContent className="max-w-2xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2.5rem] p-0 overflow-hidden shadow-2xl h-[90vh] flex flex-col">
+          <DialogHeader className="p-8 sm:p-10 pb-6 flex-shrink-0">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-accent flex items-center gap-4 italic">
+              <Edit2 className="h-6 w-6" />
+              Revisar Notinha
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="flex-grow px-6 sm:px-10 py-4">
             <div className="space-y-8">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Estabelecimento</Label>
-                <Input value={reviewEstablishment} onChange={(e) => setReviewEstablishment(e.target.value)} className="bg-white/5 border-indigo-500/20 h-14 rounded-xl font-bold" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/[0.03] p-6 rounded-[2rem] border border-white/5">
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Estabelecimento</Label>
+                  <Input 
+                    value={reviewEstablishment}
+                    onChange={(e) => setReviewEstablishment(e.target.value)}
+                    className="bg-white/5 border-indigo-500/20 h-12 rounded-xl font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-full bg-white/5 border border-white/10 h-12 rounded-xl flex items-center justify-between px-4 text-white">
+                        <span className="text-sm font-bold">{format(reviewDate, "dd/MM/yyyy")}</span>
+                        <CalendarIcon className="h-4 w-4 text-accent" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-card border-white/10" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={reviewDate}
+                        onSelect={(date) => date && setReviewDate(date)}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
+
               <div className="space-y-4">
-                {reviewItems.map((item, index) => (
-                  <div key={index} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-4">
+                {reviewItems.map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className={cn(
+                      "p-5 rounded-[2rem] border-2 transition-all flex flex-col gap-4",
+                      item.selected ? "bg-accent/5 border-accent/20" : "bg-white/[0.02] border-white/5"
+                    )}
+                  >
                     <div className="flex items-start justify-between gap-4">
-                      <Input value={item.name} onChange={(e) => {
-                        const newItems = [...reviewItems];
-                        newItems[index].name = e.target.value;
-                        setReviewItems(newItems);
-                      }} className="bg-transparent border-none p-0 h-auto text-sm font-bold focus-visible:ring-0" />
-                      <button onClick={() => setReviewItems(reviewItems.filter((_, i) => i !== index))} className="p-2 text-muted-foreground hover:text-expense"><Trash2 className="h-4 w-4" /></button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-[8px] font-black uppercase">Preço (R$)</Label>
-                        <Input type="number" step="0.01" value={item.price} onChange={(e) => {
-                          const newItems = [...reviewItems];
-                          newItems[index].price = parseFloat(e.target.value);
-                          setReviewItems(newItems);
-                        }} className="bg-white/5 border-white/5 h-10 rounded-lg text-xs" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[8px] font-black uppercase">Unid / Kg</Label>
-                        <div className="flex items-center gap-2 h-10">
-                          <Switch checked={item.isKg} onCheckedChange={(val) => {
+                      <div className="flex-1 min-w-0">
+                        <Input 
+                          value={item.name}
+                          onChange={(e) => {
                             const newItems = [...reviewItems];
-                            newItems[index].isKg = val;
+                            newItems[idx].name = e.target.value;
                             setReviewItems(newItems);
-                          }} />
-                          <span className="text-[9px] font-bold text-accent">{item.isKg ? "Kg" : "Un"}</span>
+                          }}
+                          className="bg-transparent border-none p-0 h-auto text-sm font-black focus-visible:ring-0"
+                        />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-accent mt-1">R$ {item.price.toFixed(2)}</p>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          const newItems = [...reviewItems];
+                          newItems[idx].selected = !newItems[idx].selected;
+                          setReviewItems(newItems);
+                        }}
+                        className={cn("h-10 w-10 rounded-xl", item.selected ? "bg-accent text-accent-foreground" : "bg-white/5 text-muted-foreground")}
+                      >
+                        {item.selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      </Button>
+                    </div>
+
+                    {item.selected && (
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                        <div className="space-y-2">
+                          <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Unid / Kg</Label>
+                          <div className="flex items-center gap-2">
+                             <Switch 
+                               checked={item.isKg} 
+                               onCheckedChange={(val) => {
+                                 const newItems = [...reviewItems];
+                                 newItems[idx].isKg = val;
+                                 setReviewItems(newItems);
+                               }}
+                             />
+                             <span className="text-[9px] font-black uppercase text-accent">{item.isKg ? "Kg" : "Un"}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Preço (R$)</Label>
+                          <Input 
+                            type="number"
+                            step="0.01"
+                            value={item.price}
+                            onChange={(e) => {
+                              const newItems = [...reviewItems];
+                              newItems[idx].price = parseFloat(e.target.value);
+                              setReviewItems(newItems);
+                            }}
+                            className="bg-white/5 border-white/10 h-10 rounded-lg text-center font-bold"
+                          />
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[8px] font-black uppercase">Categoria</Label>
-                        <Select value={item.category} onValueChange={(val) => {
-                          const newItems = [...reviewItems];
-                          newItems[index].category = val;
-                          setReviewItems(newItems);
-                        }}>
-                          <SelectTrigger className="bg-white/5 border-white/5 h-10 rounded-lg text-[10px]"><SelectValue /></SelectTrigger>
-                          <SelectContent className="bg-slate-950">{CATEGORIES.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.emoji} {cat.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           </ScrollArea>
-          <DialogFooter className="p-8 pt-4 border-t border-white/5"><Button variant="ghost" onClick={() => setIsReviewOpen(false)}>Cancelar</Button><Button onClick={handleConfirmReview} className="bg-accent text-accent-foreground font-black uppercase tracking-widest text-xs">Confirmar Tudo</Button></DialogFooter>
+
+          <DialogFooter className="p-8 sm:p-10 pt-6 border-t border-white/5 flex-shrink-0">
+            <Button variant="ghost" onClick={() => setIsReviewOpen(false)} className="font-black uppercase tracking-widest text-[10px]">Descartar</Button>
+            <Button onClick={handleConfirmReview} className="bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] text-xs rounded-2xl">
+              Confirmar ({reviewItems.filter(i => i.selected).length})
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -417,7 +490,7 @@ export function AdvisorView() {
                 <div className="space-y-1.5">
                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Unid / Kg</Label>
                   <div className="flex items-center gap-2 h-12">
-                     <Switch checked={formIsKg} onCheckedChange={setFormIsKg} />
+                     <Switch checked={formIsKg} onCheckedChange={(val) => setFormIsKg(val)} />
                      <span className="text-[10px] font-black text-accent uppercase">{formIsKg ? "Kg" : "Un"}</span>
                   </div>
                 </div>

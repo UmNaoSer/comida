@@ -163,26 +163,20 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
     const startCamera = async () => {
       try {
-        // Tenta primeiro a câmera traseira, se falhar (NotFoundError), tenta qualquer câmera
         try {
           currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         } catch (e: any) {
-          if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-            currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          } else {
-            throw e;
-          }
+          currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         
         if (videoRef.current) {
           videoRef.current.srcObject = currentStream;
         }
       } catch (err: any) {
-        console.error("Erro ao acessar câmera:", err);
         toast({
           variant: "destructive",
           title: "Erro na Câmera",
-          description: "Não foi possível acessar a câmera. Verifique as permissões do seu navegador.",
+          description: "Não foi possível acessar a câmera. Verifique as permissões.",
         });
         setIsCameraOpen(false);
       }
@@ -204,8 +198,14 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current) return;
-    const canvas = canvasRef.current;
     const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde um momento e tente novamente." });
+      return;
+    }
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
@@ -230,7 +230,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
           ...item,
           name: match ? match.name : item.name, 
           matchedProduct: match || null, 
-          selected: !!match,
+          selected: true, // Auto-select items by default
           quantity: "1",
           isKg: false
         };
@@ -242,7 +242,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (e) {
-      toast({ variant: "destructive", title: "Erro na leitura", description: "Tente novamente." });
+      toast({ variant: "destructive", title: "Erro na leitura", description: "Não foi possível analisar a nota. Tente novamente." });
     } finally {
       setIsAnalyzing(false);
     }
@@ -417,7 +417,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                   <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">{isKg ? "Peso (Kg)" : "Qtd (Un)"}</Label>
                   <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-2 rounded-xl">
                     <Scale className={cn("h-4 w-4 transition-colors", !isKg ? "text-accent" : "text-muted-foreground")} />
-                    <Switch checked={isKg} onCheckedChange={setIsKg} />
+                    <Switch checked={isKg} onCheckedChange={(val) => setIsKg(val)} />
                     <Scale className={cn("h-4 w-4 transition-colors", isKg ? "text-accent" : "text-muted-foreground")} />
                   </div>
                 </div>
