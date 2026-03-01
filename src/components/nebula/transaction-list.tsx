@@ -38,21 +38,21 @@ interface TransactionListProps {
   compact?: boolean;
 }
 
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  'Açougue': Beef,
-  'Hortifruti': Apple,
-  'Padaria': Store,
-  'Laticínios': Milk,
-  'Mercearia': ShoppingBasket,
-  'Temperos': Flame,
-  'Bebidas': Coffee,
-  'Limpeza': Wind,
-  'Higiene': Droplets,
-  'Pets': Dog,
-  'Lazer': Gamepad2,
-  'Transporte': Bus,
-  'Alimentação': Utensils,
-  'Compras': ShoppingBag
+const CATEGORY_DATA: Record<string, { icon: React.ElementType, color: string }> = {
+  'Açougue': { icon: Beef, color: "bg-[#FFB7B2]" },
+  'Hortifruti': { icon: Apple, color: "bg-[#B2FFB2]" },
+  'Padaria': { icon: Store, color: "bg-[#FFFFB2]" },
+  'Laticínios': { icon: Milk, color: "bg-[#B2D6FF]" },
+  'Mercearia': { icon: ShoppingBasket, color: "bg-[#FFD1B2]" },
+  'Temperos': { icon: Flame, color: "bg-[#FFB2D6]" },
+  'Bebidas': { icon: Coffee, color: "bg-[#B2B2FF]" },
+  'Limpeza': { icon: Wind, color: "bg-[#B2FFFF]" },
+  'Higiene': { icon: Droplets, color: "bg-[#E2FFB2]" },
+  'Pets': { icon: Dog, color: "bg-[#F2B2FF]" },
+  'Lazer': { icon: Gamepad2, color: "bg-[#FFB2B2]" },
+  'Transporte': { icon: Bus, color: "bg-[#D1B2FF]" },
+  'Alimentação': { icon: Utensils, color: "bg-[#B2FFD1]" },
+  'Compras': { icon: ShoppingBag, color: "bg-[#FFB2E2]" }
 };
 
 export function TransactionList({ transactions, userId, showAll = false, compact = false }: TransactionListProps) {
@@ -83,16 +83,30 @@ export function TransactionList({ transactions, userId, showAll = false, compact
     return format(date, "dd MMM yyyy", { locale: ptBR });
   };
 
-  const getIcon = (tx: Transaction) => {
-    const IconComponent = tx.category ? CATEGORY_ICONS[tx.category] : null;
-    if (IconComponent) return <IconComponent className="h-4 w-4" />;
-    return tx.type === 'income' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />;
+  const getIconContainer = (tx: Transaction) => {
+    const categoryInfo = tx.category ? CATEGORY_DATA[tx.category] : null;
+    const IconComponent = categoryInfo ? categoryInfo.icon : (tx.type === 'income' ? ArrowUpRight : ArrowDownLeft);
+    const bgColor = categoryInfo ? categoryInfo.color : (tx.type === 'income' ? 'bg-income/10' : 'bg-expense/10');
+    const textColor = categoryInfo ? 'text-gray-900' : (tx.type === 'income' ? 'text-income' : 'text-expense');
+
+    return (
+      <div className={cn("p-2 rounded-xl", bgColor, textColor)}>
+        <IconComponent className="h-4 w-4" />
+      </div>
+    );
   };
 
-  const getLargeIcon = (tx: Transaction) => {
-    const IconComponent = tx.category ? CATEGORY_ICONS[tx.category] : null;
-    if (IconComponent) return <IconComponent className="h-5 w-5" />;
-    return tx.type === 'income' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownLeft className="h-5 w-5" />;
+  const getLargeIconContainer = (tx: Transaction) => {
+    const categoryInfo = tx.category ? CATEGORY_DATA[tx.category] : null;
+    const IconComponent = categoryInfo ? categoryInfo.icon : (tx.type === 'income' ? ArrowUpRight : ArrowDownLeft);
+    const bgColor = categoryInfo ? categoryInfo.color : (tx.type === 'income' ? 'bg-income/10' : 'bg-expense/10');
+    const textColor = categoryInfo ? 'text-gray-900' : (tx.type === 'income' ? 'text-income' : 'text-expense');
+
+    return (
+      <div className={cn("p-3 rounded-2xl transition-all duration-300 group-hover:rotate-12", bgColor, textColor)}>
+        <IconComponent className="h-5 w-5" />
+      </div>
+    );
   };
 
   if (compact) {
@@ -104,14 +118,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
             className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors group"
           >
             <div className="flex items-center gap-4">
-              <div
-                className={cn(
-                  "p-2 rounded-xl",
-                  tx.type === 'income' ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
-                )}
-              >
-                {getIcon(tx)}
-              </div>
+              {getIconContainer(tx)}
               <div>
                 <p className="font-bold text-sm text-foreground/90">{tx.description}</p>
                 <p className="text-[9px] font-mono text-muted-foreground uppercase">{formatDate(tx.date)}</p>
@@ -155,14 +162,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                 className="flex items-center justify-between p-5 hover:bg-white/[0.03] transition-colors group relative"
               >
                 <div className="flex items-center gap-5">
-                  <div
-                    className={cn(
-                      "p-3 rounded-2xl transition-all duration-300 group-hover:rotate-12",
-                      tx.type === 'income' ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
-                    )}
-                  >
-                    {getLargeIcon(tx)}
-                  </div>
+                  {getLargeIconContainer(tx)}
                   <div>
                     <p className="font-bold text-foreground/90 tracking-tight">{tx.description}</p>
                     <div className="flex items-center gap-3 mt-0.5">

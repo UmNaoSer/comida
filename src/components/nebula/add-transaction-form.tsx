@@ -58,20 +58,20 @@ interface AddTransactionFormProps {
 }
 
 const CATEGORIES = [
-  { id: 'Açougue', name: "Açougue", icon: Beef },
-  { id: 'Hortifruti', name: "Hortifruti", icon: Apple },
-  { id: 'Padaria', name: "Padaria", icon: Store },
-  { id: 'Laticínios', name: "Laticínios", icon: Milk },
-  { id: 'Mercearia', name: "Mercearia", icon: ShoppingBasket },
-  { id: 'Temperos', name: "Temperos", icon: Flame },
-  { id: 'Bebidas', name: "Bebidas", icon: Coffee },
-  { id: 'Limpeza', name: "Limpeza", icon: Wind },
-  { id: 'Higiene', name: "Higiene", icon: Droplets },
-  { id: 'Pets', name: "Pets", icon: Dog },
-  { id: 'Lazer', name: "Lazer", icon: Gamepad2 },
-  { id: 'Transporte', name: "Transporte", icon: Bus },
-  { id: 'Alimentação', name: "Alimentação", icon: Utensils },
-  { id: 'Compras', name: "Compras", icon: ShoppingBag }
+  { id: 'Açougue', name: "Açougue", icon: Beef, color: "bg-[#FFB7B2]" },
+  { id: 'Hortifruti', name: "Hortifruti", icon: Apple, color: "bg-[#B2FFB2]" },
+  { id: 'Padaria', name: "Padaria", icon: Store, color: "bg-[#FFFFB2]" },
+  { id: 'Laticínios', name: "Laticínios", icon: Milk, color: "bg-[#B2D6FF]" },
+  { id: 'Mercearia', name: "Mercearia", icon: ShoppingBasket, color: "bg-[#FFD1B2]" },
+  { id: 'Temperos', name: "Temperos", icon: Flame, color: "bg-[#FFB2D6]" },
+  { id: 'Bebidas', name: "Bebidas", icon: Coffee, color: "bg-[#B2B2FF]" },
+  { id: 'Limpeza', name: "Limpeza", icon: Wind, color: "bg-[#B2FFFF]" },
+  { id: 'Higiene', name: "Higiene", icon: Droplets, color: "bg-[#E2FFB2]" },
+  { id: 'Pets', name: "Pets", icon: Dog, color: "bg-[#F2B2FF]" },
+  { id: 'Lazer', name: "Lazer", icon: Gamepad2, color: "bg-[#FFB2B2]" },
+  { id: 'Transporte', name: "Transporte", icon: Bus, color: "bg-[#D1B2FF]" },
+  { id: 'Alimentação', name: "Alimentação", icon: Utensils, color: "bg-[#B2FFD1]" },
+  { id: 'Compras', name: "Compras", icon: ShoppingBag, color: "bg-[#FFB2E2]" }
 ];
 
 export function AddTransactionForm({ userId }: AddTransactionFormProps) {
@@ -256,13 +256,13 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               className={cn(
                 "flex flex-col items-center justify-center gap-3 p-4 rounded-3xl border-2 transition-all duration-300 active:scale-95",
                 selectedCategory === cat.id 
-                  ? "bg-accent border-accent text-accent-foreground shadow-2xl shadow-accent/20 scale-105" 
+                  ? `${cat.color} border-transparent text-gray-900 shadow-2xl scale-105` 
                   : "bg-white/5 border-white/5 text-indigo-200/40 hover:bg-white/10 hover:border-white/10"
               )}
             >
               <div className={cn(
                 "p-3 rounded-2xl transition-all",
-                selectedCategory === cat.id ? "bg-accent-foreground/10" : "bg-white/5"
+                selectedCategory === cat.id ? "bg-black/10" : "bg-white/5"
               )}>
                 <cat.icon className="h-6 w-6" />
               </div>

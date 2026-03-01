@@ -53,20 +53,20 @@ type Tab = 'produtos' | 'estabelecimentos';
 const GUEST_USER_ID = "guest-protocol-v1";
 
 const CATEGORIES = [
-  { name: "Açougue", emoji: "🥩" },
-  { name: "Hortifruti", emoji: "🍎" },
-  { name: "Padaria", emoji: "🥖" },
-  { name: "Laticínios", emoji: "🥛" },
-  { name: "Mercearia", emoji: "🧺" },
-  { name: "Temperos", emoji: "🌶️" },
-  { name: "Bebidas", emoji: "🥤" },
-  { name: "Limpeza", emoji: "🧹" },
-  { name: "Higiene", emoji: "🧼" },
-  { name: "Pets", emoji: "🐾" },
-  { name: "Lazer", emoji: "🎡" },
-  { name: "Transporte", emoji: "🚌" },
-  { name: "Alimentação", emoji: "🍽️" },
-  { name: "Compras", emoji: "🛍️" }
+  { name: "Açougue", emoji: "🥩", color: "bg-[#FFB7B2]" },
+  { name: "Hortifruti", emoji: "🍎", color: "bg-[#B2FFB2]" },
+  { name: "Padaria", emoji: "🥖", color: "bg-[#FFFFB2]" },
+  { name: "Laticínios", emoji: "🥛", color: "bg-[#B2D6FF]" },
+  { name: "Mercearia", emoji: "🧺", color: "bg-[#FFD1B2]" },
+  { name: "Temperos", emoji: "🌶️", color: "bg-[#FFB2D6]" },
+  { name: "Bebidas", emoji: "🥤", color: "bg-[#B2B2FF]" },
+  { name: "Limpeza", emoji: "🧹", color: "bg-[#B2FFFF]" },
+  { name: "Higiene", emoji: "🧼", color: "bg-[#E2FFB2]" },
+  { name: "Pets", emoji: "🐾", color: "bg-[#F2B2FF]" },
+  { name: "Lazer", emoji: "🎡", color: "bg-[#FFB2B2]" },
+  { name: "Transporte", emoji: "🚌", color: "bg-[#D1B2FF]" },
+  { name: "Alimentação", emoji: "🍽️", color: "bg-[#B2FFD1]" },
+  { name: "Compras", emoji: "🛍️", color: "bg-[#FFB2E2]" }
 ];
 
 export function AdvisorView() {
@@ -417,7 +417,7 @@ export function AdvisorView() {
         <DialogContent className="max-w-3xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2rem] p-0 overflow-hidden">
           <DialogHeader className="p-8 pb-4">
             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-accent italic flex items-center gap-3">
-              <Edit2 className="h-6 w-6 glow-accent" />
+              <Edit2 className="h-6 w-6" />
               Revisar Notinha
             </DialogTitle>
           </DialogHeader>
@@ -522,7 +522,7 @@ export function AdvisorView() {
             
             <div className="flex items-center justify-between mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl font-headline font-black text-accent italic uppercase tracking-tighter flex items-center gap-3">
-                <Plus className="h-5 w-5 glow-accent" />
+                <Plus className="h-5 w-5" />
                 Adicionar Produto
               </h3>
             </div>
@@ -697,7 +697,10 @@ export function AdvisorView() {
                     <CardContent className="p-4 sm:p-8 space-y-6 sm:space-y-8">
                       <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
                         <div className="space-y-3 w-full lg:flex-1">
-                          <span className="inline-block text-[9px] font-black tracking-[0.2em] bg-accent/10 text-accent px-4 py-1.5 rounded-full uppercase">
+                          <span className={cn(
+                            "inline-block text-[9px] font-black tracking-[0.2em] px-4 py-1.5 rounded-full uppercase text-gray-900",
+                            categoryData?.color || "bg-accent/10 text-accent"
+                          )}>
                             {categoryData?.emoji} {product.category}
                           </span>
                           <div className="flex justify-between items-start gap-4">
@@ -785,7 +788,7 @@ export function AdvisorView() {
                 <Store className="h-40 w-40 text-accent" />
              </div>
             <h3 className="text-lg sm:text-xl font-black uppercase tracking-[0.2em] text-accent mb-6 sm:mb-8 flex items-center gap-3">
-              <Plus className="h-5 w-5 sm:h-6 glow-accent" />
+              <Plus className="h-5 w-5 sm:h-6" />
               Cadastrar Loja
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
