@@ -47,7 +47,6 @@ interface AddTransactionFormProps {
 }
 
 const CATEGORIES = [
-  { id: 'all', name: "Tudo", icon: LayoutPanelLeft },
   { id: 'Mercado', name: "Mercado", icon: Utensils },
   { id: 'Hortifruti', name: "Hortifruti", icon: Apple },
   { id: 'Carnes', name: "Carnes", icon: Beef },
@@ -61,9 +60,10 @@ const CATEGORIES = [
 export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("Mercado");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [amount, setAmount] = useState("");
+  const [quantity, setQuantity] = useState("1");
 
   // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -99,11 +99,15 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     e.preventDefault();
     if (!selectedProduct || !amount || !db) return;
 
-    saveTransaction(selectedProduct.name, parseFloat(amount), selectedProduct.category);
+    const totalAmount = parseFloat(amount) * (parseInt(quantity) || 1);
+    const description = `${selectedProduct.name}${parseInt(quantity) > 1 ? ` (x${quantity})` : ''}`;
+    
+    saveTransaction(description, totalAmount, selectedProduct.category);
     
     setSelectedProduct(null);
     setSearchTerm("");
     setAmount("");
+    setQuantity("1");
   };
 
   const saveTransaction = (description: string, val: number, cat: string) => {
@@ -197,20 +201,25 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         <div className="flex items-center justify-between px-1">
           <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300/60">Escolher Categoria</Label>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4 px-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={cn(
-                "flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border-2 transition-all duration-300 active:scale-95",
+                "flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 active:scale-95",
                 selectedCategory === cat.id 
-                  ? "bg-accent border-accent text-accent-foreground shadow-2xl shadow-accent/30 scale-105" 
+                  ? "bg-accent border-accent text-accent-foreground shadow-2xl shadow-accent/20 scale-105" 
                   : "bg-white/5 border-white/5 text-indigo-200/40 hover:bg-white/10 hover:border-white/10"
               )}
             >
-              <cat.icon className={cn("h-8 w-8 transition-transform", selectedCategory === cat.id && "scale-110")} />
-              <span className="text-[10px] font-black uppercase tracking-widest">{cat.name}</span>
+              <div className={cn(
+                "p-3 rounded-2xl transition-all",
+                selectedCategory === cat.id ? "bg-accent-foreground/10" : "bg-white/5"
+              )}>
+                <cat.icon className="h-6 w-6" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-widest">{cat.name}</span>
             </button>
           ))}
         </div>
@@ -264,7 +273,10 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                       </div>
                       <button 
                         type="button"
-                        onClick={() => setSelectedProduct(p)}
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setQuantity("1");
+                        }}
                         className={cn(
                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
                           selectedProduct?.id === p.id 
@@ -284,6 +296,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                           onClick={() => {
                             setSelectedProduct(p);
                             setAmount(sp.price.toString());
+                            setQuantity("1");
                           }}
                           className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all group/price"
                         >
@@ -311,44 +324,59 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
       {/* Confirmation Area - Floating Footer */}
       {selectedProduct && (
-        <div className="fixed bottom-32 left-0 right-0 z-50 px-6 animate-in slide-in-from-bottom-10 duration-500">
-          <div className="max-w-4xl mx-auto bg-card/80 backdrop-blur-2xl border-2 border-accent/20 rounded-[3rem] p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center gap-8">
-            <div className="flex-1 space-y-2 w-full">
-              <div className="flex items-center gap-3 text-accent mb-1">
-                <Check className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Confirmar Item</span>
+        <div className="fixed bottom-32 left-0 right-0 z-50 px-4 sm:px-6 animate-in slide-in-from-bottom-10 duration-500">
+          <div className="max-w-4xl mx-auto bg-card/90 backdrop-blur-2xl border-2 border-accent/20 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col items-stretch gap-6 sm:gap-8">
+            <div className="flex flex-col md:flex-row items-center gap-6 sm:gap-8">
+              <div className="flex-1 space-y-2 w-full">
+                <div className="flex items-center gap-3 text-accent mb-1">
+                  <Check className="h-4 w-4" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">Confirmar Item</span>
+                </div>
+                <h4 className="text-xl font-black italic">{selectedProduct.name}</h4>
+                <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{selectedProduct.category}</p>
               </div>
-              <h4 className="text-xl font-black italic">{selectedProduct.name}</h4>
-              <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{selectedProduct.category}</p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full md:w-auto">
+                <div className="w-full sm:w-24 space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Qtd</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="bg-white/5 border-white/10 h-14 sm:h-16 rounded-2xl focus:border-accent/50 text-center text-xl font-black text-white"
+                  />
+                </div>
+
+                <div className="w-full sm:w-48 space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Preço Un.</Label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-accent text-lg">R$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="bg-white/5 border-white/10 h-14 sm:h-16 rounded-2xl focus:border-accent/50 pl-12 text-xl sm:text-2xl font-black text-accent"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="w-full md:w-64 space-y-2">
-              <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Valor Final</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-accent text-lg">R$</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="bg-white/5 border-white/10 h-16 rounded-2xl focus:border-accent/50 pl-12 text-2xl font-black text-accent shadow-inner"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-4 w-full md:w-auto">
+            <div className="flex gap-4 w-full">
               <Button 
                 onClick={() => setSelectedProduct(null)}
                 variant="ghost"
-                className="h-16 px-6 rounded-2xl text-muted-foreground hover:text-white font-black uppercase text-[10px] tracking-widest"
+                className="flex-1 sm:flex-none h-14 sm:h-16 px-6 rounded-2xl text-muted-foreground hover:text-white font-black uppercase text-[10px] tracking-widest"
               >
-                <X className="h-5 w-5" />
+                Cancelar
               </Button>
               <Button 
                 onClick={handleManualSubmit}
                 disabled={!amount}
-                className="flex-1 md:flex-none h-16 px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-accent/20 rounded-2xl transition-all active:scale-95"
+                className="flex-[2] sm:flex-none h-14 sm:h-16 px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-accent/20 rounded-2xl transition-all active:scale-95"
               >
                 Confirmar
                 <Zap className="ml-3 h-4 w-4" />
