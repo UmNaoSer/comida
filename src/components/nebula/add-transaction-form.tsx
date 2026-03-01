@@ -387,7 +387,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                   <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">{isKg ? "Peso (Kg)" : "Qtd (Un)"}</Label>
                   <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-2 rounded-xl">
                     <Scale className={cn("h-4 w-4 transition-colors", !isKg ? "text-accent" : "text-muted-foreground")} />
-                    <Switch checked={isKg} onValueChange={setIsKg} />
+                    <Switch checked={isKg} onCheckedChange={setIsKg} />
                     <Scale className={cn("h-4 w-4 transition-colors", isKg ? "text-accent" : "text-muted-foreground")} />
                   </div>
                 </div>
@@ -566,7 +566,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                           <div className="flex items-center gap-2">
                              <Switch 
                                checked={item.isKg} 
-                               onValueChange={(val) => {
+                               onCheckedChange={(val) => {
                                  const newItems = [...reviewItems];
                                  newItems[idx].isKg = val;
                                  setReviewItems(newItems);

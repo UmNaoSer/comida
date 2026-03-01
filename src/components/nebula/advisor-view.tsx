@@ -335,7 +335,7 @@ export function AdvisorView() {
                       <div className="space-y-1">
                         <Label className="text-[8px] font-black uppercase">Unid / Kg</Label>
                         <div className="flex items-center gap-2 h-10">
-                          <Switch checked={item.isKg} onValueChange={(val) => {
+                          <Switch checked={item.isKg} onCheckedChange={(val) => {
                             const newItems = [...reviewItems];
                             newItems[index].isKg = val;
                             setReviewItems(newItems);
@@ -385,7 +385,7 @@ export function AdvisorView() {
                 <div className="space-y-1.5">
                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Unid / Kg</Label>
                   <div className="flex items-center gap-2 h-12">
-                     <Switch checked={formIsKg} onValueChange={setFormIsKg} />
+                     <Switch checked={formIsKg} onCheckedChange={setFormIsKg} />
                      <span className="text-[10px] font-black text-accent uppercase">{formIsKg ? "Kg" : "Un"}</span>
                   </div>
                 </div>
