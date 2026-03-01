@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,15 +16,12 @@ import {
   Search, 
   Trophy, 
   Store, 
-  LayoutPanelLeft, 
   Trash2, 
   Plus, 
-  Calendar as CalendarIcon, 
   ChevronDown, 
   Camera, 
   Loader2, 
   X,
-  Check,
   Edit2,
   History,
   Scale
@@ -36,7 +34,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { analyzeReceipt, type AnalyzeReceiptOutput } from "@/ai/flows/analyze-receipt-flow";
+import { analyzeReceipt } from "@/ai/flows/analyze-receipt-flow";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -410,11 +408,11 @@ export function AdvisorView() {
                 <Card key={product.name} className="bg-indigo-950/10 border-white/5 rounded-[2rem] p-6 sm:p-8 hover:border-accent/20 transition-all">
                   <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
                     <div className="space-y-3 flex-1"><span className={cn("inline-block text-[9px] font-black px-4 py-1.5 rounded-full uppercase text-gray-900", categoryData?.color || "bg-accent/10 text-accent")}>{categoryData?.emoji} {product.category}</span><div className="flex justify-between items-start gap-4"><h3 className="text-2xl font-bold tracking-tight">{product.name}</h3><button onClick={() => handleDeleteProductGroup(product.name)} className="text-muted-foreground hover:text-expense"><Trash2 className="h-5 w-5" /></button></div></div>
-                    {best && <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl px-6 py-4 flex items-center gap-6"><div className="flex items-center gap-4"> <Trophy className="h-5 w-5 text-cyan-400" /><div><p className="text-[10px] font-black text-cyan-400 uppercase">Melhor Loja</p><p className="font-bold text-lg">{best.storeName}</p></div></div><div className="border-l border-cyan-500/20 pl-6"><p className="text-2xl font-black text-cyan-400">R$ {best.price.toFixed(2)}</p></div></div>}
+                    {best && <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl px-6 py-4 flex items-center gap-6"><div className="flex items-center gap-4"> <Trophy className="h-5 w-5 text-cyan-400" /><div><p className="text-[10px] font-black text-cyan-400 uppercase">Melhor Loja</p><p className="font-bold text-lg">{best.storeName}</p></div></div><div className="border-l border-cyan-500/20 pl-6"><p className="text-2xl font-black text-cyan-400">R$ {best.price.toFixed(2)} / {best.unit || "Un"}</p></div></div>}
                   </div>
                   <Collapsible className="space-y-4 pt-6 border-t border-white/5 mt-6">
                     <CollapsibleTrigger className="flex items-center justify-between w-full group/collapsible"><div className="flex items-center gap-2"><History className="h-4 w-4 text-indigo-400" /><p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico</p></div><ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" /></CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-3">{entries.map(e => <div key={e.id} className="flex justify-between text-xs py-2 border-b border-white/[0.03]"><span>{e.storeName} <span className="text-muted-foreground ml-2">({e.unit || "Un"})</span></span><span className="font-bold text-income">R$ {e.price.toFixed(2)}</span></div>)}</CollapsibleContent>
+                    <CollapsibleContent className="space-y-3">{entries.map(e => <div key={e.id} className="flex justify-between text-xs py-2 border-b border-white/[0.03]"><span>{e.storeName} <span className="text-muted-foreground ml-2">({e.unit || "Un"})</span></span><span className="font-bold text-income">R$ {e.price.toFixed(2)} / {e.unit || "Un"}</span></div>)}</CollapsibleContent>
                   </Collapsible>
                 </Card>
               );

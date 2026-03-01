@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Transaction": {
@@ -113,9 +114,10 @@
         "storeId": { "type": "string" },
         "storeName": { "type": "string" },
         "price": { "type": "number" },
+        "unit": { "type": "string", "enum": ["Kg", "Un"] },
         "date": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "productId", "storeId", "storeName", "price", "date"]
+      "required": ["id", "productId", "storeId", "storeName", "price", "date", "unit"]
     }
   },
   "auth": {
