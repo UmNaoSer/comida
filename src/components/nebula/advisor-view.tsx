@@ -311,6 +311,20 @@ export function AdvisorView() {
     relatedEntries.forEach(entry => {
       deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "price_entries", entry.id));
     });
+    
+    toast({
+      title: "Produto removido",
+      description: "O produto e seu histórico de preços foram excluídos.",
+    });
+  };
+
+  const handleDeleteEstablishment = (estId: string) => {
+    if (!db) return;
+    deleteDocumentNonBlocking(doc(db, "users", GUEST_USER_ID, "establishments", estId));
+    toast({
+      title: "Loja excluída",
+      description: "A loja foi removida dos seus registros.",
+    });
   };
 
   if (!mounted) return null;
@@ -816,6 +830,12 @@ export function AdvisorView() {
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => handleDeleteEstablishment(est.id)}
+                    className="p-2 text-muted-foreground hover:text-expense transition-colors relative z-20"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Card>
               ))

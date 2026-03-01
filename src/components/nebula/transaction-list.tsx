@@ -129,13 +129,21 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                 <p className="text-[9px] font-mono text-muted-foreground uppercase">{formatDate(tx.date)}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className={cn(
-                "font-bold text-sm",
-                tx.type === 'income' ? "text-income" : "text-expense"
-              )}>
-                R$ {formatCurrency(tx.amount)}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className={cn(
+                  "font-bold text-sm",
+                  tx.type === 'income' ? "text-income" : "text-expense"
+                )}>
+                  R$ {formatCurrency(tx.amount)}
+                </p>
+              </div>
+              <button 
+                onClick={() => handleDelete(tx.id)}
+                className="p-1 text-muted-foreground hover:text-expense transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
           </div>
         ))}
@@ -194,7 +202,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                   </div>
                   <button 
                     onClick={() => handleDelete(tx.id)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-expense transition-all"
+                    className="p-2 text-muted-foreground hover:text-expense transition-all"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
