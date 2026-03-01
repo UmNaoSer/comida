@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: 'A modern personal finance tracker built for the future.',
 };
 
+// Configuração global de tempo de execução para IA e Server Actions
+export const maxDuration = 60;
+
 export default function RootLayout({
   children,
 }: Readonly<{

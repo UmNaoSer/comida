@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -26,9 +25,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-
-// Configuração para o Vercel reconhecer o tempo de execução da IA
-export const maxDuration = 60;
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
