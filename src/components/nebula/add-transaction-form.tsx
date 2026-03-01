@@ -369,14 +369,14 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               <Button 
                 onClick={() => setSelectedProduct(null)}
                 variant="ghost"
-                className="flex-1 sm:flex-none h-14 sm:h-16 px-6 rounded-2xl text-muted-foreground hover:text-white font-black uppercase text-[10px] tracking-widest"
+                className="flex-1 h-14 sm:h-16 px-4 sm:px-6 rounded-2xl text-muted-foreground hover:text-white font-black uppercase text-[10px] tracking-widest"
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleManualSubmit}
                 disabled={!amount}
-                className="flex-[2] sm:flex-none h-14 sm:h-16 px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-accent/20 rounded-2xl transition-all active:scale-95"
+                className="flex-[2] h-14 sm:h-16 px-4 sm:px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-accent/20 rounded-2xl transition-all active:scale-95"
               >
                 Confirmar
                 <Zap className="ml-3 h-4 w-4" />
