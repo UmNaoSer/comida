@@ -23,7 +23,8 @@ import {
   X,
   Edit2,
   History,
-  Scale
+  Scale,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
