@@ -1,33 +1,33 @@
 'use server';
 /**
- * @fileOverview This file implements a Genkit flow for the AI Financial Insight Tool.
- * It analyzes recent financial transactions to highlight simple spending patterns
- * and provide relevant, generic financial tips.
+ * @fileOverview Este arquivo implementa um fluxo Genkit para a ferramenta de Insights Financeiros via IA.
+ * Analisa transações financeiras recentes para destacar padrões simples de gastos
+ * e fornecer dicas financeiras genéricas e relevantes.
  *
- * - getFinancialAdvisorInsights - A function that fetches financial insights from the AI.
- * - FinancialAdvisorInsightsInput - The input type for the getFinancialAdvisorInsights function.
- * - FinancialAdvisorInsightsOutput - The return type for the getFinancialAdvisorInsights function.
+ * - getFinancialAdvisorInsights - Função que busca insights financeiros da IA.
+ * - FinancialAdvisorInsightsInput - O tipo de entrada para a função getFinancialAdvisorInsights.
+ * - FinancialAdvisorInsightsOutput - O tipo de retorno para a função getFinancialAdvisorInsights.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const TransactionSchema = z.object({
-  id: z.string().describe('Unique identifier for the transaction.'),
-  description: z.string().describe('A brief description of the transaction.'),
-  amount: z.number().describe('The amount of the transaction.'),
-  type: z.enum(['income', 'expense']).describe('The type of the transaction: "income" or "expense".'),
-  date: z.string().datetime().describe('The date of the transaction in ISO 8601 format.'),
+  id: z.string().describe('Identificador único da transação.'),
+  description: z.string().describe('Uma breve descrição da transação.'),
+  amount: z.number().describe('O valor da transação.'),
+  type: z.enum(['income', 'expense']).describe('O tipo da transação: "income" (entrada) ou "expense" (saída).'),
+  date: z.string().datetime().describe('A data da transação no formato ISO 8601.'),
 });
 
 const FinancialAdvisorInsightsInputSchema = z.object({
-  transactions: z.array(TransactionSchema).describe('An array of recent financial transactions to analyze.'),
+  transactions: z.array(TransactionSchema).describe('Um array de transações financeiras recentes para analisar.'),
 });
 export type FinancialAdvisorInsightsInput = z.infer<typeof FinancialAdvisorInsightsInputSchema>;
 
 const FinancialAdvisorInsightsOutputSchema = z.object({
-  spendingPatterns: z.string().describe('A summary of simple spending patterns identified from the provided transactions.'),
-  financialTips: z.string().describe('Relevant, generic financial tips based on the provided transactions.'),
+  spendingPatterns: z.string().describe('Um resumo de padrões simples de gastos identificados a partir das transações fornecidas.'),
+  financialTips: z.string().describe('Dicas financeiras genéricas e relevantes baseadas nas transações fornecidas.'),
 });
 export type FinancialAdvisorInsightsOutput = z.infer<typeof FinancialAdvisorInsightsOutputSchema>;
 
@@ -41,19 +41,20 @@ const financialAdvisorInsightsPrompt = ai.definePrompt({
   name: 'financialAdvisorInsightsPrompt',
   input: {schema: FinancialAdvisorInsightsInputSchema},
   output: {schema: FinancialAdvisorInsightsOutputSchema},
-  prompt: `You are a financial advisor. Your task is to analyze the provided recent financial transactions.
-Based on this analysis, you need to identify simple spending patterns and provide relevant, generic financial tips to help the user better understand and manage their personal finances.
+  prompt: `Você é um consultor financeiro especializado. Sua tarefa é analisar as transações financeiras recentes fornecidas.
+Com base nesta análise, você deve identificar padrões simples de gastos e fornecer dicas financeiras genéricas e relevantes para ajudar o usuário a entender e gerenciar melhor suas finanças pessoais.
 
-Here are the recent transactions:
+Aqui estão as transações recentes:
 {{#each transactions}}
-- Date: {{date}}, Type: {{type}}, Amount: {{amount}}, Description: {{description}}
+- Data: {{date}}, Tipo: {{type}}, Valor: {{amount}}, Descrição: {{description}}
 {{/each}}
 
-Please provide:
-1. A summary of simple spending patterns you observe.
-2. Relevant, generic financial tips.
+Por favor, forneça:
+1. Um resumo dos padrões simples de gastos que você observa.
+2. Dicas financeiras genéricas e relevantes.
 
-Format your response as a JSON object with 'spendingPatterns' and 'financialTips' fields, as described by the output schema.`,
+O seu texto DEVE estar em Português do Brasil (pt-BR).
+Formate sua resposta como um objeto JSON com os campos 'spendingPatterns' e 'financialTips', conforme descrito no esquema de saída.`,
 });
 
 const financialAdvisorInsightsFlow = ai.defineFlow(
@@ -65,7 +66,7 @@ const financialAdvisorInsightsFlow = ai.defineFlow(
   async (input) => {
     const {output} = await financialAdvisorInsightsPrompt(input);
     if (!output) {
-      throw new Error('Failed to get financial insights from AI.');
+      throw new Error('Falha ao obter insights financeiros da IA.');
     }
     return output;
   }
