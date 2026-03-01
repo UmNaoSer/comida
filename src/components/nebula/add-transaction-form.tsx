@@ -163,9 +163,18 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
     const startCamera = async () => {
       try {
+        const constraints = { 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        };
+        
         try {
-          currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        } catch (e: any) {
+          currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
+          // Fallback to any camera
           currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         
@@ -173,10 +182,11 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
           videoRef.current.srcObject = currentStream;
         }
       } catch (err: any) {
+        console.error("Erro ao acessar a câmera:", err);
         toast({
           variant: "destructive",
           title: "Erro na Câmera",
-          description: "Não foi possível acessar a câmera. Verifique as permissões.",
+          description: "Não foi possível acessar a câmera. Verifique as permissões do seu navegador.",
         });
         setIsCameraOpen(false);
       }
@@ -190,9 +200,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
       }
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-      }
     };
   }, [isCameraOpen, toast]);
 
@@ -201,15 +208,16 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde um momento e tente novamente." });
+    // Aguarda o vídeo estar pronto
+    if (video.readyState !== 4) {
+      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde o vídeo carregar e tente novamente." });
       return;
     }
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
-    const photoDataUri = canvas.toDataURL('image/jpeg');
+    const photoDataUri = canvas.toDataURL('image/jpeg', 0.8);
     
     setIsAnalyzing(true);
     try {
@@ -230,7 +238,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
           ...item,
           name: match ? match.name : item.name, 
           matchedProduct: match || null, 
-          selected: true, // Auto-select items by default
+          selected: true,
           quantity: "1",
           isKg: false
         };
@@ -242,7 +250,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (e) {
-      toast({ variant: "destructive", title: "Erro na leitura", description: "Não foi possível analisar a nota. Tente novamente." });
+      console.error("Erro na análise da nota:", e);
+      toast({ variant: "destructive", title: "Erro na leitura", description: "Ocorreu um problema ao processar a imagem. Tente novamente." });
     } finally {
       setIsAnalyzing(false);
     }

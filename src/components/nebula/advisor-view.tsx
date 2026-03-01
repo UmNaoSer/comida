@@ -126,9 +126,17 @@ export function AdvisorView() {
 
     const startCamera = async () => {
       try {
+        const constraints = { 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        };
+        
         try {
-          currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        } catch (e: any) {
+          currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
           currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         
@@ -136,6 +144,7 @@ export function AdvisorView() {
           videoRef.current.srcObject = currentStream;
         }
       } catch (err: any) {
+        console.error("Erro ao acessar a câmera:", err);
         toast({
           variant: "destructive",
           title: "Erro na Câmera",
@@ -153,9 +162,6 @@ export function AdvisorView() {
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
       }
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-      }
     };
   }, [isCameraOpen, toast]);
 
@@ -164,15 +170,15 @@ export function AdvisorView() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde um momento e tente novamente." });
+    if (video.readyState !== 4) {
+      toast({ variant: "destructive", title: "Câmera não carregou", description: "Aguarde o vídeo carregar e tente novamente." });
       return;
     }
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
-    const photoDataUri = canvas.toDataURL('image/jpeg');
+    const photoDataUri = canvas.toDataURL('image/jpeg', 0.8);
     
     setIsAnalyzing(true);
     try {
@@ -202,6 +208,7 @@ export function AdvisorView() {
       setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (error) {
+      console.error("Erro na análise:", error);
       toast({ variant: "destructive", title: "Erro na leitura", description: "Não foi possível analisar a nota. Tente novamente." });
     } finally {
       setIsAnalyzing(false);
