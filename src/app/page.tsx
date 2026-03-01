@@ -12,7 +12,6 @@ import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
 import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
@@ -21,7 +20,6 @@ const GUEST_USER_ID = "guest-protocol-v1";
 export default function NebulaFinanx() {
   const db = useFirestore();
   const [view, setView] = useState<View>('dashboard');
-  const [txSearch, setTxSearch] = useState("");
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -48,12 +46,6 @@ export default function NebulaFinanx() {
 
   // Recent transactions for the dashboard (limit to 5)
   const recentTxs = txs.slice(0, 5);
-
-  // Filtered transactions for the Audit Logs view
-  const filteredTxs = txs.filter(t => 
-    t.description.toLowerCase().includes(txSearch.toLowerCase()) ||
-    (t.category && t.category.toLowerCase().includes(txSearch.toLowerCase()))
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-headline">
@@ -128,22 +120,10 @@ export default function NebulaFinanx() {
           <div className="space-y-10 animate-in fade-in duration-500">
             <div className="space-y-1">
               <h2 className="text-3xl font-bold uppercase tracking-tight italic">Finanças</h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Histórico de Transações</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Registrar Compra</p>
             </div>
             
             <AddTransactionForm userId={GUEST_USER_ID} />
-
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-accent transition-colors" />
-              <Input 
-                placeholder="Pesquisar por descrição ou categoria..."
-                value={txSearch}
-                onChange={(e) => setTxSearch(e.target.value)}
-                className="bg-white/5 border-white/5 h-14 pl-12 rounded-2xl focus:border-accent/40 focus:bg-white/[0.08] transition-all text-sm"
-              />
-            </div>
-
-            <TransactionList transactions={filteredTxs} userId={GUEST_USER_ID} showAll />
           </div>
         )}
 
