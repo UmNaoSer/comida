@@ -11,17 +11,42 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { Search, Trophy, Store, LayoutPanelLeft, Zap, ShoppingBag, History, Trash2, Plus, Calendar as CalendarIcon, ChevronDown, Camera, Loader2, X } from "lucide-react";
+import { 
+  Search, 
+  Trophy, 
+  Store, 
+  LayoutPanelLeft, 
+  Zap, 
+  ShoppingBag, 
+  History, 
+  Trash2, 
+  Plus, 
+  Calendar as CalendarIcon, 
+  ChevronDown, 
+  Camera, 
+  Loader2, 
+  X,
+  Check,
+  Edit2
+} from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, doc, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { analyzeReceipt } from "@/ai/flows/analyze-receipt-flow";
+import { analyzeReceipt, type AnalyzeReceiptOutput } from "@/ai/flows/analyze-receipt-flow";
 import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Tab = 'produtos' | 'estabelecimentos';
 
@@ -50,6 +75,10 @@ export function AdvisorView() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Review Modal State
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewData, setReviewData] = useState<AnalyzeReceiptOutput | null>(null);
 
   // States for the "Add Product" form
   const [formEstId, setFormEstId] = useState("");
@@ -118,58 +147,8 @@ export function AdvisorView() {
 
     try {
       const result = await analyzeReceipt({ photoDataUri });
-      
-      // 1. Process Establishment
-      let storeId = "";
-      const existingEst = establishments?.find(e => e.name.toLowerCase() === result.establishmentName.toLowerCase());
-      
-      if (existingEst) {
-        storeId = existingEst.id;
-      } else {
-        storeId = Math.random().toString(36).substr(2, 9);
-        const estRef = doc(db, "users", GUEST_USER_ID, "establishments", storeId);
-        setDocumentNonBlocking(estRef, {
-          id: storeId,
-          name: result.establishmentName,
-          type: "Estabelecimento",
-          createdAt: new Date().toISOString(),
-        }, { merge: true });
-      }
-
-      // 2. Process Items
-      for (const item of result.items) {
-        const normalizedName = item.name.trim().toLowerCase();
-        const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
-        
-        let prodId: string;
-        if (existingProduct) {
-          prodId = existingProduct.id;
-        } else {
-          prodId = Math.random().toString(36).substr(2, 9);
-          const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
-          setDocumentNonBlocking(prodRef, {
-            id: prodId,
-            name: item.name.trim(),
-            category: item.category,
-          }, { merge: true });
-        }
-
-        const entryId = Math.random().toString(36).substr(2, 9);
-        const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
-        setDocumentNonBlocking(entryRef, {
-          id: entryId,
-          productId: prodId,
-          storeId: storeId,
-          storeName: result.establishmentName,
-          price: item.price,
-          date: new Date().toISOString(),
-        }, { merge: true });
-      }
-
-      toast({
-        title: "Nota Processada",
-        description: `${result.items.length} itens adicionados de ${result.establishmentName}.`,
-      });
+      setReviewData(result);
+      setIsReviewOpen(true);
       setIsCameraOpen(false);
     } catch (error) {
       console.error("AI Error:", error);
@@ -181,6 +160,77 @@ export function AdvisorView() {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleConfirmReview = () => {
+    if (!reviewData || !db) return;
+
+    // 1. Process Establishment
+    let storeId = "";
+    const existingEst = establishments?.find(e => e.name.toLowerCase() === reviewData.establishmentName.toLowerCase());
+    
+    if (existingEst) {
+      storeId = existingEst.id;
+    } else {
+      storeId = Math.random().toString(36).substr(2, 9);
+      const estRef = doc(db, "users", GUEST_USER_ID, "establishments", storeId);
+      setDocumentNonBlocking(estRef, {
+        id: storeId,
+        name: reviewData.establishmentName,
+        type: "Estabelecimento",
+        createdAt: new Date().toISOString(),
+      }, { merge: true });
+    }
+
+    // 2. Process Items
+    for (const item of reviewData.items) {
+      const normalizedName = item.name.trim().toLowerCase();
+      const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
+      
+      let prodId: string;
+      if (existingProduct) {
+        prodId = existingProduct.id;
+      } else {
+        prodId = Math.random().toString(36).substr(2, 9);
+        const prodRef = doc(db, "users", GUEST_USER_ID, "products", prodId);
+        setDocumentNonBlocking(prodRef, {
+          id: prodId,
+          name: item.name.trim(),
+          category: item.category,
+        }, { merge: true });
+      }
+
+      const entryId = Math.random().toString(36).substr(2, 9);
+      const entryRef = doc(db, "users", GUEST_USER_ID, "price_entries", entryId);
+      setDocumentNonBlocking(entryRef, {
+        id: entryId,
+        productId: prodId,
+        storeId: storeId,
+        storeName: reviewData.establishmentName,
+        price: item.price,
+        date: new Date().toISOString(),
+      }, { merge: true });
+    }
+
+    toast({
+      title: "Nota Processada",
+      description: `${reviewData.items.length} itens adicionados de ${reviewData.establishmentName}.`,
+    });
+    setIsReviewOpen(false);
+    setReviewData(null);
+  };
+
+  const updateReviewItem = (index: number, field: string, value: any) => {
+    if (!reviewData) return;
+    const newItems = [...reviewData.items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setReviewData({ ...reviewData, items: newItems });
+  };
+
+  const removeReviewItem = (index: number) => {
+    if (!reviewData) return;
+    const newItems = reviewData.items.filter((_, i) => i !== index);
+    setReviewData({ ...reviewData, items: newItems });
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -356,6 +406,107 @@ export function AdvisorView() {
         </div>
       )}
 
+      {/* Review Dialog */}
+      <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+        <DialogContent className="max-w-3xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2rem] p-0 overflow-hidden">
+          <DialogHeader className="p-8 pb-4">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-accent italic flex items-center gap-3">
+              <Edit2 className="h-6 w-6 glow-accent" />
+              Revisar Notinha
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[60vh] px-8 py-4">
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Estabelecimento</label>
+                <Input 
+                  value={reviewData?.establishmentName || ""}
+                  onChange={(e) => setReviewData(prev => prev ? { ...prev, establishmentName: e.target.value } : null)}
+                  className="bg-white/5 border-indigo-500/20 h-14 rounded-xl focus:border-accent/40 text-lg font-bold"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-indigo-300">Itens Extraídos</h4>
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase">{reviewData?.items.length || 0} Itens</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {reviewData?.items.map((item, index) => (
+                    <div key={index} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 group hover:border-accent/20 transition-all space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <Input 
+                          value={item.name}
+                          onChange={(e) => updateReviewItem(index, 'name', e.target.value)}
+                          className="bg-transparent border-none p-0 h-auto text-sm font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
+                        <button 
+                          onClick={() => removeReviewItem(index)}
+                          className="p-2 text-muted-foreground hover:text-expense transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Preço (R$)</label>
+                          <Input 
+                            type="number"
+                            step="0.01"
+                            value={item.price}
+                            onChange={(e) => updateReviewItem(index, 'price', parseFloat(e.target.value))}
+                            className="bg-white/5 border-white/5 h-10 rounded-lg text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Categoria</label>
+                          <Select 
+                            value={item.category} 
+                            onValueChange={(val) => updateReviewItem(index, 'category', val)}
+                          >
+                            <SelectTrigger className="bg-white/5 border-white/5 h-10 rounded-lg text-[10px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-950 border-white/10">
+                              {CATEGORIES.map(cat => (
+                                <SelectItem key={cat.name} value={cat.name}>
+                                  <span className="mr-2">{cat.emoji}</span>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="p-8 pt-4 border-t border-white/5 bg-white/[0.02]">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsReviewOpen(false)}
+              className="h-14 px-8 rounded-xl text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-white"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmReview}
+              className="h-14 px-12 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-black uppercase tracking-widest text-xs shadow-lg shadow-accent/20 flex items-center gap-3"
+            >
+              Confirmar e Adicionar
+              <Check className="h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
           <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
@@ -519,17 +670,12 @@ export function AdvisorView() {
                 let bestEntryOverall = null;
                 
                 if (productEntries.length > 0) {
-                  // Get unique stores and their LATEST entry
                   const latestByStore = new Map();
-                  
-                  // Assuming entries are already sorted by date descending via the query
                   productEntries.forEach(entry => {
                     if (!latestByStore.has(entry.storeId)) {
                       latestByStore.set(entry.storeId, entry);
                     }
                   });
-                  
-                  // From the latest entry of each store, find the minimum price
                   const candidates = Array.from(latestByStore.values()) as any[];
                   bestEntryOverall = candidates.reduce((min, curr) => curr.price < min.price ? curr : min, candidates[0]);
                 }
@@ -563,11 +709,11 @@ export function AdvisorView() {
                           <div className="w-full lg:w-auto bg-cyan-500/10 border border-cyan-500/20 rounded-2xl px-4 py-4 sm:px-6 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 shadow-[0_0_20px_rgba(34,211,238,0.05)]">
                             <div className="flex items-center gap-4 flex-1">
                               <div className="p-2 sm:p-2.5 bg-cyan-500/20 rounded-xl shrink-0">
-                                <Trophy className="h-4 w-4 sm:h-5 sm:h-5 text-cyan-400" />
+                                <Trophy className="h-4 w-4 sm:h-5 text-cyan-400" />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="text-[8px] sm:text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
-                                <p className="font-bold text-base sm:text-lg break-words">{bestEntryOverall.storeName}</p>
+                                <p className="font-bold text-base sm:text-lg break-words leading-tight">{bestEntryOverall.storeName}</p>
                               </div>
                             </div>
                             <div className="w-full sm:w-auto sm:text-right sm:border-l border-cyan-500/20 sm:pl-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
@@ -633,7 +779,7 @@ export function AdvisorView() {
                 <Store className="h-40 w-40 text-accent" />
              </div>
             <h3 className="text-lg sm:text-xl font-black uppercase tracking-[0.2em] text-accent mb-6 sm:mb-8 flex items-center gap-3">
-              <Plus className="h-5 w-5 sm:h-6 sm:h-6 glow-accent" />
+              <Plus className="h-5 w-5 sm:h-6 glow-accent" />
               Cadastrar Loja
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
@@ -660,14 +806,14 @@ export function AdvisorView() {
                 <Card key={est.id} className="bg-indigo-950/10 border-white/5 rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-6 flex items-center justify-between group hover:border-accent/30 transition-all relative overflow-hidden">
                   <div className="flex items-center gap-4 sm:gap-5 relative z-10 flex-1 min-w-0">
                     <div className="p-3 sm:p-4 bg-accent/10 rounded-xl sm:rounded-2xl group-hover:bg-accent/20 transition-colors shrink-0">
-                      <Store className="h-6 w-6 sm:h-7 sm:h-7 text-accent" />
+                      <Store className="h-6 w-6 sm:h-7 text-accent" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-base sm:text-lg tracking-tight break-words">{est.name}</h4>
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
                     </div>
                   </div>
-                  <Zap className="h-4 w-4 sm:h-5 sm:h-5 text-accent/10 group-hover:text-accent transition-all relative z-10 shrink-0" />
+                  <Zap className="h-4 w-4 sm:h-5 text-accent/10 group-hover:text-accent transition-all relative z-10 shrink-0" />
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Card>
               ))
