@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -10,7 +9,7 @@ import { FlowChart } from "@/components/nebula/flow-chart";
 import { AIInsights } from "@/components/nebula/ai-insights";
 import { AdvisorView } from "@/components/nebula/advisor-view";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
-import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight } from "lucide-react";
+import { LayoutDashboard, History, Loader2, Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getYear } from "date-fns";
@@ -66,7 +65,6 @@ export default function NebulaFinanx() {
       {/* Header */}
       <header className="container mx-auto px-6 h-24 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-accent" />
           <div className="flex flex-col">
             <h1 className="text-xl font-bold tracking-widest uppercase">Nebula</h1>
             <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] -mt-1">Gestão Financeira</span>

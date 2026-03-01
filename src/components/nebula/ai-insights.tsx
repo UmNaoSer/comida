@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, BrainCircuit, Lightbulb, Loader2 } from 'lucide-react';
+import { BrainCircuit, Lightbulb, Loader2 } from 'lucide-react';
 import { getFinancialAdvisorInsights, type FinancialAdvisorInsightsOutput } from '@/ai/flows/financial-advisor-insights-flow';
 import { Transaction } from '@/lib/types';
 
@@ -50,7 +50,7 @@ export function AIInsights({ transactions }: AIInsightsProps) {
           disabled={loading || transactions.length === 0}
           className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full h-10 px-6 font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-accent/20 transition-all active:scale-95"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="mr-2 h-4 w-4" /> Gerar Insights</>}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar Insights"}
         </Button>
       </CardHeader>
 

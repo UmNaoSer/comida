@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export function AuthView() {
   const auth = useAuth();
@@ -22,9 +22,6 @@ export function AuthView() {
 
       <Card className="w-full max-w-md nebula-card border-accent/20 relative z-10">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-6 glow-accent">
-            <Sparkles className="h-8 w-8 text-accent-foreground" />
-          </div>
           <CardTitle className="text-4xl font-headline font-bold tracking-tight mb-2">Nebula Finanx</CardTitle>
           <p className="text-muted-foreground text-sm uppercase tracking-widest">Acesse sua conta</p>
         </CardHeader>
