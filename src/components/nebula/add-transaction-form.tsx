@@ -22,7 +22,9 @@ import {
   Coffee,
   Laptop,
   Box,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Store
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, orderBy } from "firebase/firestore";
@@ -77,6 +79,14 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   }, [db, userId]);
 
   const { data: products } = useCollection(productsQuery);
+
+  // Fetch price entries to show store-specific prices in the selector
+  const entriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "users", userId, "price_entries"), orderBy("date", "desc"));
+  }, [db, userId]);
+
+  const { data: allEntries } = useCollection(entriesQuery);
 
   const filteredProducts = products?.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -221,32 +231,76 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                 </div>
               </div>
 
-              <ScrollArea className="h-48 rounded-2xl border border-white/5 bg-white/[0.02]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+              <ScrollArea className="h-72 rounded-2xl border border-white/5 bg-white/[0.02]">
+                <div className="grid grid-cols-1 gap-3 p-3">
                   {filteredProducts.length === 0 ? (
-                    <div className="col-span-full py-12 text-center">
+                    <div className="py-12 text-center">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Nenhum produto cadastrado nesta categoria.</p>
                     </div>
                   ) : (
-                    filteredProducts.map(p => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedProduct(p)}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-3 rounded-xl border transition-all group",
-                          selectedProduct?.id === p.id 
-                            ? "bg-accent/20 border-accent/40 text-accent" 
-                            : "bg-white/5 border-transparent text-foreground hover:bg-white/10"
-                        )}
-                      >
-                        <div className="text-left min-w-0">
-                          <p className="text-xs font-bold truncate">{p.name}</p>
-                          <p className="text-[8px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
+                    filteredProducts.map(p => {
+                      // Logic: Get latest entry per store for this product
+                      const productEntries = allEntries?.filter(e => e.productId === p.id) || [];
+                      const latestByStore = new Map();
+                      productEntries.forEach(entry => {
+                        if (!latestByStore.has(entry.storeId)) {
+                          latestByStore.set(entry.storeId, entry);
+                        }
+                      });
+                      const storePrices = Array.from(latestByStore.values()) as any[];
+
+                      return (
+                        <div 
+                          key={p.id}
+                          className={cn(
+                            "p-4 rounded-2xl border transition-all space-y-4",
+                            selectedProduct?.id === p.id 
+                              ? "bg-accent/5 border-accent/30" 
+                              : "bg-white/[0.03] border-white/5"
+                          )}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="text-left min-w-0">
+                              <p className="text-sm font-black truncate">{p.name}</p>
+                              <p className="text-[9px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => setSelectedProduct(p)}
+                              className={cn(
+                                "p-2 rounded-xl transition-all",
+                                selectedProduct?.id === p.id 
+                                  ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20" 
+                                  : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                              )}
+                            >
+                              {selectedProduct?.id === p.id ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2">
+                            {storePrices.map(sp => (
+                              <button
+                                key={sp.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedProduct(p);
+                                  setAmount(sp.price.toString());
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all flex items-center gap-2 group/store"
+                              >
+                                <Store className="h-3 w-3 opacity-40 group-hover/store:opacity-100" />
+                                <span>{sp.storeName}</span>
+                                <span className="text-accent group-hover/store:text-accent-foreground font-black">R$ {sp.price.toFixed(2)}</span>
+                              </button>
+                            ))}
+                            {storePrices.length === 0 && (
+                              <p className="text-[8px] text-muted-foreground/40 italic uppercase tracking-[0.2em] font-medium">Nenhum preço registrado</p>
+                            )}
+                          </div>
                         </div>
-                        {selectedProduct?.id === p.id && <Check className="h-4 w-4 shrink-0" />}
-                      </button>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </ScrollArea>
