@@ -20,7 +20,7 @@ interface FlowChartProps {
 export function FlowChart({ transactions }: FlowChartProps) {
   const now = new Date();
   const months = eachMonthOfInterval({
-    start: subMonths(now, 8),
+    start: subMonths(now, 5),
     end: now,
   });
 
@@ -33,20 +33,20 @@ export function FlowChart({ transactions }: FlowChartProps) {
       return txDate >= start && txDate <= end;
     });
 
-    const income = monthTransactions
-      .filter((tx) => tx.type === 'income')
+    const expenses = monthTransactions
+      .filter((tx) => tx.type === 'expense')
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     return {
       month: format(month, "MMM", { locale: ptBR }),
-      income,
+      expenses,
     };
   });
 
   const chartConfig = {
-    income: {
-      label: "Fluxo",
-      color: "hsl(var(--income))",
+    expenses: {
+      label: "Gastos",
+      color: "hsl(var(--expense))",
     },
   } satisfies ChartConfig;
 
@@ -55,7 +55,7 @@ export function FlowChart({ transactions }: FlowChartProps) {
       <CardHeader className="flex flex-row items-center justify-between pb-0">
         <CardTitle className="text-lg font-bold uppercase tracking-tight flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-accent" />
-          Fluxo Financeiro
+          Gastos Mensais
         </CardTitle>
         <div className="flex items-center gap-4 text-[9px] text-muted-foreground uppercase tracking-widest">
           <div className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors">
@@ -69,9 +69,9 @@ export function FlowChart({ transactions }: FlowChartProps) {
         <ChartContainer config={chartConfig} className="h-[320px] w-full">
           <AreaChart data={chartData} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
             <defs>
-              <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+              <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--expense))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--expense))" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -87,15 +87,16 @@ export function FlowChart({ transactions }: FlowChartProps) {
               axisLine={false}
               tickMargin={12}
               tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold' }}
+              tickFormatter={(value) => `R$${value}`}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Area
-              dataKey="income"
+              dataKey="expenses"
               type="monotone"
-              fill="url(#fillIncome)"
-              stroke="#4f46e5"
+              fill="url(#fillExpenses)"
+              stroke="hsl(var(--expense))"
               strokeWidth={3}
-              dot={{ fill: '#4f46e5', r: 4, strokeWidth: 2, stroke: '#000' }}
+              dot={{ fill: 'hsl(var(--expense))', r: 4, strokeWidth: 2, stroke: '#000' }}
               activeDot={{ r: 6, strokeWidth: 0 }}
             />
           </AreaChart>
@@ -103,7 +104,7 @@ export function FlowChart({ transactions }: FlowChartProps) {
         
         {/* Scroll Indicator */}
         <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-          <div className="h-full w-2/3 bg-accent rounded-full shadow-[0_0_10px_rgba(255,230,120,0.3)]" />
+          <div className="h-full w-full bg-accent rounded-full shadow-[0_0_10px_rgba(255,230,120,0.3)]" />
         </div>
       </CardContent>
     </Card>
