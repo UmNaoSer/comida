@@ -515,18 +515,21 @@ export function AdvisorView() {
               groupedProducts.map((product) => {
                 const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
                 
-                // Optimized "Best Store" Logic:
-                // Pick the one with the lowest price among the latest entries for each store
+                // Logic: Analyze each store's most recent entry and pick the lowest price among them.
                 let bestEntryOverall = null;
                 
                 if (productEntries.length > 0) {
+                  // Get unique stores and their LATEST entry
                   const latestByStore = new Map();
+                  
+                  // Assuming entries are already sorted by date descending via the query
                   productEntries.forEach(entry => {
                     if (!latestByStore.has(entry.storeId)) {
                       latestByStore.set(entry.storeId, entry);
                     }
                   });
                   
+                  // From the latest entry of each store, find the minimum price
                   const candidates = Array.from(latestByStore.values()) as any[];
                   bestEntryOverall = candidates.reduce((min, curr) => curr.price < min.price ? curr : min, candidates[0]);
                 }
@@ -546,7 +549,7 @@ export function AdvisorView() {
                             {categoryData?.emoji} {product.category}
                           </span>
                           <div className="flex justify-between items-start gap-4">
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight">{product.name}</h3>
+                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight break-words">{product.name}</h3>
                             <button 
                               onClick={() => handleDeleteProductGroup(product.name)}
                               className="text-muted-foreground hover:text-expense transition-colors shrink-0"
@@ -562,9 +565,9 @@ export function AdvisorView() {
                               <div className="p-2 sm:p-2.5 bg-cyan-500/20 rounded-xl shrink-0">
                                 <Trophy className="h-4 w-4 sm:h-5 sm:h-5 text-cyan-400" />
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="text-[8px] sm:text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
-                                <p className="font-bold text-base sm:text-lg truncate">{bestEntryOverall.storeName}</p>
+                                <p className="font-bold text-base sm:text-lg break-words">{bestEntryOverall.storeName}</p>
                               </div>
                             </div>
                             <div className="w-full sm:w-auto sm:text-right sm:border-l border-cyan-500/20 sm:pl-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
@@ -604,8 +607,8 @@ export function AdvisorView() {
                           ) : (
                             productEntries.map((entry) => (
                               <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-10 min-w-0">
-                                  <span className="font-bold text-indigo-200 truncate">{entry.storeName}</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-10 min-w-0 flex-1">
+                                  <span className="font-bold text-indigo-200 break-words">{entry.storeName}</span>
                                   <span className="text-muted-foreground font-mono text-[9px] sm:text-[10px]">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
                                 </div>
                                 <div className="text-right shrink-0">
@@ -655,16 +658,16 @@ export function AdvisorView() {
             ) : (
               establishments.map((est) => (
                 <Card key={est.id} className="bg-indigo-950/10 border-white/5 rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-6 flex items-center justify-between group hover:border-accent/30 transition-all relative overflow-hidden">
-                  <div className="flex items-center gap-4 sm:gap-5 relative z-10">
-                    <div className="p-3 sm:p-4 bg-accent/10 rounded-xl sm:rounded-2xl group-hover:bg-accent/20 transition-colors">
+                  <div className="flex items-center gap-4 sm:gap-5 relative z-10 flex-1 min-w-0">
+                    <div className="p-3 sm:p-4 bg-accent/10 rounded-xl sm:rounded-2xl group-hover:bg-accent/20 transition-colors shrink-0">
                       <Store className="h-6 w-6 sm:h-7 sm:h-7 text-accent" />
                     </div>
-                    <div>
-                      <h4 className="font-bold text-base sm:text-lg tracking-tight">{est.name}</h4>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-base sm:text-lg tracking-tight break-words">{est.name}</h4>
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
                     </div>
                   </div>
-                  <Zap className="h-4 w-4 sm:h-5 sm:h-5 text-accent/10 group-hover:text-accent transition-all relative z-10" />
+                  <Zap className="h-4 w-4 sm:h-5 sm:h-5 text-accent/10 group-hover:text-accent transition-all relative z-10 shrink-0" />
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Card>
               ))
