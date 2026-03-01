@@ -5,7 +5,26 @@ import { Transaction } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowUpRight, ArrowDownLeft, Trash2, ListChecks } from "lucide-react";
+import { 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  Trash2, 
+  ListChecks,
+  Beef,
+  Apple,
+  Store,
+  Milk,
+  ShoppingBasket,
+  Flame,
+  Coffee,
+  Wind,
+  Droplets,
+  Dog,
+  Gamepad2,
+  Bus,
+  Utensils,
+  ShoppingBag
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -18,6 +37,23 @@ interface TransactionListProps {
   showAll?: boolean;
   compact?: boolean;
 }
+
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  'Açougue': Beef,
+  'Hortifruti': Apple,
+  'Padaria': Store,
+  'Laticínios': Milk,
+  'Mercearia': ShoppingBasket,
+  'Temperos': Flame,
+  'Bebidas': Coffee,
+  'Limpeza': Wind,
+  'Higiene': Droplets,
+  'Pets': Dog,
+  'Lazer': Gamepad2,
+  'Transporte': Bus,
+  'Alimentação': Utensils,
+  'Compras': ShoppingBag
+};
 
 export function TransactionList({ transactions, userId, showAll = false, compact = false }: TransactionListProps) {
   const db = useFirestore();
@@ -47,6 +83,18 @@ export function TransactionList({ transactions, userId, showAll = false, compact
     return format(date, "dd MMM yyyy", { locale: ptBR });
   };
 
+  const getIcon = (tx: Transaction) => {
+    const IconComponent = tx.category ? CATEGORY_ICONS[tx.category] : null;
+    if (IconComponent) return <IconComponent className="h-4 w-4" />;
+    return tx.type === 'income' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />;
+  };
+
+  const getLargeIcon = (tx: Transaction) => {
+    const IconComponent = tx.category ? CATEGORY_ICONS[tx.category] : null;
+    if (IconComponent) return <IconComponent className="h-5 w-5" />;
+    return tx.type === 'income' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownLeft className="h-5 w-5" />;
+  };
+
   if (compact) {
     return (
       <div className="divide-y divide-white/5 -mx-6">
@@ -62,7 +110,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                   tx.type === 'income' ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
                 )}
               >
-                {tx.type === 'income' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
+                {getIcon(tx)}
               </div>
               <div>
                 <p className="font-bold text-sm text-foreground/90">{tx.description}</p>
@@ -113,7 +161,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                       tx.type === 'income' ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
                     )}
                   >
-                    {tx.type === 'income' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownLeft className="h-5 w-5" />}
+                    {getLargeIcon(tx)}
                   </div>
                   <div>
                     <p className="font-bold text-foreground/90 tracking-tight">{tx.description}</p>
