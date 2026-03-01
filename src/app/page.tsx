@@ -12,6 +12,7 @@ import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
 import { LayoutDashboard, History, Sparkles, Loader2, Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getYear } from "date-fns";
 
 type View = 'dashboard' | 'transactions' | 'advisor';
 
@@ -20,6 +21,7 @@ const GUEST_USER_ID = "guest-protocol-v1";
 export default function NebulaFinanx() {
   const db = useFirestore();
   const [view, setView] = useState<View>('dashboard');
+  const [selectedYear, setSelectedYear] = useState<string>(getYear(new Date()).toString());
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -40,11 +42,18 @@ export default function NebulaFinanx() {
   }
 
   const txs = transactions || [];
-  const totalIncome = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  
+  // Filter transactions by selected year
+  const filteredTxs = txs.filter(t => {
+    const txYear = getYear(new Date(t.date)).toString();
+    return txYear === selectedYear;
+  });
+
+  const totalIncome = filteredTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = filteredTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const totalBalance = totalIncome - totalExpenses;
 
-  // Recent transactions for the dashboard (limit to 5)
+  // Recent transactions for the dashboard (limit to 5) - uses all txs for historical view
   const recentTxs = txs.slice(0, 5);
 
   return (
@@ -75,7 +84,7 @@ export default function NebulaFinanx() {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em]">Visão Geral</p>
               </div>
               <div className="bg-accent/10 border border-accent/20 px-4 py-1.5 rounded-lg">
-                <span className="text-accent font-bold text-sm tracking-widest">2026</span>
+                <span className="text-accent font-bold text-sm tracking-widest">{selectedYear}</span>
               </div>
             </div>
 
@@ -83,9 +92,14 @@ export default function NebulaFinanx() {
               balance={totalBalance} 
               income={totalIncome} 
               expenses={totalExpenses} 
+              selectedYear={selectedYear}
             />
             
-            <FlowChart transactions={txs} />
+            <FlowChart 
+              transactions={txs} 
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+            />
 
             <AIInsights transactions={txs} />
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Transaction } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
@@ -11,7 +10,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { format, startOfMonth, endOfMonth, eachMonthOfInterval, setYear, getYear } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
@@ -24,11 +23,12 @@ import {
 
 interface FlowChartProps {
   transactions: Transaction[];
+  selectedYear: string;
+  onYearChange: (year: string) => void;
 }
 
-export function FlowChart({ transactions }: FlowChartProps) {
+export function FlowChart({ transactions, selectedYear, onYearChange }: FlowChartProps) {
   const currentYear = getYear(new Date());
-  const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
 
   // Generate all 12 months for the selected year
   const yearStart = new Date(parseInt(selectedYear), 0, 1);
@@ -82,7 +82,7 @@ export function FlowChart({ transactions }: FlowChartProps) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1">
             <CalendarIcon className="h-3 w-3 text-accent" />
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <Select value={selectedYear} onValueChange={onYearChange}>
               <SelectTrigger className="h-7 border-none bg-transparent p-0 text-[11px] font-black uppercase tracking-widest focus:ring-0 w-20">
                 <SelectValue />
               </SelectTrigger>

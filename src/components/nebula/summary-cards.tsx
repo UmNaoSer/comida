@@ -1,18 +1,17 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, TrendingUp, DollarSign } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface SummaryCardsProps {
   balance: number;
   income: number;
   expenses: number;
+  selectedYear: string;
 }
 
-export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
+export function SummaryCards({ balance, income, expenses, selectedYear }: SummaryCardsProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -21,8 +20,6 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
 
   const formatCurrency = (val: number) => {
     if (!isMounted) return "0,00";
-    // Usamos Math.abs para garantir que os valores sejam exibidos sem o sinal de negativo,
-    // conforme solicitado pelo usuário para uma visão de volume financeiro.
     return Math.abs(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
   };
 
@@ -34,7 +31,7 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
         <CardContent className="p-8 flex flex-col justify-between h-full relative z-10">
           <div className="flex items-center gap-2 text-indigo-200/80">
             <Calendar className="h-4 w-4" />
-            <p className="text-xs font-bold uppercase tracking-[0.2em]">Total em 2026</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em]">Total em {selectedYear}</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-baseline gap-2">
