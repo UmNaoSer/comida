@@ -27,6 +27,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+// Vercel/NextJS optimization: increase timeout for AI flows which can take longer
+export const maxDuration = 60;
+
 type View = 'dashboard' | 'transactions' | 'advisor';
 
 const GUEST_USER_ID = "guest-protocol-v1";
