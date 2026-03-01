@@ -180,7 +180,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
             <ShoppingBag className="h-8 w-8 text-accent" />
             Nova Compra
           </h2>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold">Registro Inteligente</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold">Registro Direto</p>
         </div>
         
         <Button 
@@ -192,31 +192,28 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </Button>
       </div>
 
-      {/* Category Section - Large Icons */}
+      {/* Category Section - Modern Grid */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
-          <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300/60">Categorias</Label>
+          <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300/60">Escolher Categoria</Label>
         </div>
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex gap-4 pb-6 px-1">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-3 min-w-[110px] h-[110px] rounded-[2rem] border-2 transition-all duration-300 active:scale-95",
-                  selectedCategory === cat.id 
-                    ? "bg-accent border-accent text-accent-foreground shadow-2xl shadow-accent/30 scale-105" 
-                    : "bg-white/5 border-white/5 text-indigo-200/40 hover:bg-white/10 hover:border-white/10"
-                )}
-              >
-                <cat.icon className={cn("h-8 w-8 transition-transform", selectedCategory === cat.id && "scale-110")} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{cat.name}</span>
-              </button>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4 px-1">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={cn(
+                "flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border-2 transition-all duration-300 active:scale-95",
+                selectedCategory === cat.id 
+                  ? "bg-accent border-accent text-accent-foreground shadow-2xl shadow-accent/30 scale-105" 
+                  : "bg-white/5 border-white/5 text-indigo-200/40 hover:bg-white/10 hover:border-white/10"
+              )}
+            >
+              <cat.icon className={cn("h-8 w-8 transition-transform", selectedCategory === cat.id && "scale-110")} />
+              <span className="text-[10px] font-black uppercase tracking-widest">{cat.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Product Selection Area - Robust Grid */}
@@ -301,7 +298,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                     </div>
                   </div>
                   
-                  {/* Subtle Glow Background */}
+                  {/* Subtle Background Icon */}
                   <div className="absolute -right-8 -bottom-8 p-12 opacity-[0.03] group-hover:opacity-[0.08] transition-all group-hover:scale-110 pointer-events-none">
                     <Database className="h-32 w-32 text-accent" />
                   </div>
@@ -312,14 +309,14 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </div>
       </div>
 
-      {/* Confirmation Area - Floating or Prominent */}
+      {/* Confirmation Area - Floating Footer */}
       {selectedProduct && (
         <div className="fixed bottom-32 left-0 right-0 z-50 px-6 animate-in slide-in-from-bottom-10 duration-500">
           <div className="max-w-4xl mx-auto bg-card/80 backdrop-blur-2xl border-2 border-accent/20 rounded-[3rem] p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 space-y-2 w-full">
               <div className="flex items-center gap-3 text-accent mb-1">
                 <Check className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Item Selecionado</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Confirmar Item</span>
               </div>
               <h4 className="text-xl font-black italic">{selectedProduct.name}</h4>
               <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{selectedProduct.category}</p>
