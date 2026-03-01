@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -53,6 +54,10 @@ export default function NebulaFinanx() {
   const totalExpenses = filteredTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const totalBalance = totalIncome - totalExpenses;
 
+  // Accurate Monthly Average: Divide year total by number of months with entries in that year
+  const monthsWithEntries = new Set(filteredTxs.map(t => new Date(t.date).getMonth())).size;
+  const monthlyAverage = monthsWithEntries > 0 ? totalBalance / monthsWithEntries : 0;
+
   // Recent transactions for the dashboard (limit to 5) - uses all txs for historical view
   const recentTxs = txs.slice(0, 5);
 
@@ -93,6 +98,7 @@ export default function NebulaFinanx() {
               income={totalIncome} 
               expenses={totalExpenses} 
               selectedYear={selectedYear}
+              average={monthlyAverage}
             />
             
             <FlowChart 

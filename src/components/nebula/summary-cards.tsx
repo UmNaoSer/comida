@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,9 +10,10 @@ interface SummaryCardsProps {
   income: number;
   expenses: number;
   selectedYear: string;
+  average: number;
 }
 
-export function SummaryCards({ balance, income, expenses, selectedYear }: SummaryCardsProps) {
+export function SummaryCards({ balance, income, expenses, selectedYear, average }: SummaryCardsProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export function SummaryCards({ balance, income, expenses, selectedYear }: Summar
                 {formatCurrency(balance)}
               </h2>
             </div>
-            <p className="text-[10px] text-indigo-300/60 uppercase tracking-[0.2em]">Soma de todos os lançamentos</p>
+            <p className="text-[10px] text-indigo-300/60 uppercase tracking-[0.2em]">Soma dos lançamentos no ano</p>
           </div>
         </CardContent>
       </Card>
@@ -56,10 +58,10 @@ export function SummaryCards({ balance, income, expenses, selectedYear }: Summar
             <div className="flex items-baseline gap-2">
               <span className="text-cyan-400 text-lg font-bold">R$</span>
               <h2 className="text-5xl font-black tracking-tighter">
-                {formatCurrency(balance / 12)}
+                {formatCurrency(average)}
               </h2>
             </div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Baseado em meses com gastos</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Baseado em meses com lançamentos</p>
           </div>
         </CardContent>
       </Card>
