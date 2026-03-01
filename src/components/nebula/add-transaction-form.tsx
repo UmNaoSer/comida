@@ -25,10 +25,11 @@ import {
   ChevronRight,
   Plus,
   Store,
-  Sparkles
+  Sparkles,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, orderBy } from "firebase/firestore";
+import { doc, collection, query, orderBy, limit } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface AddTransactionFormProps {
   userId: string;
@@ -64,6 +69,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [amount, setAmount] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -80,6 +86,24 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   }, [db, userId]);
 
   const { data: products } = useCollection(productsQuery);
+
+  // Fetch latest transaction for date suggestion
+  const latestTxQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(
+      collection(db, "users", userId, "transactions"), 
+      orderBy("date", "desc"),
+      limit(1)
+    );
+  }, [db, userId]);
+
+  const { data: latestTxs } = useCollection(latestTxQuery);
+
+  useEffect(() => {
+    if (latestTxs && latestTxs.length > 0) {
+      setSelectedDate(new Date(latestTxs[0].date));
+    }
+  }, [latestTxs]);
 
   // Fetch price entries
   const entriesQuery = useMemoFirebase(() => {
@@ -102,7 +126,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     const totalAmount = parseFloat(amount) * (parseInt(quantity) || 1);
     const description = `${selectedProduct.name}${parseInt(quantity) > 1 ? ` (x${quantity})` : ''}`;
     
-    saveTransaction(description, totalAmount, selectedProduct.category);
+    saveTransaction(description, totalAmount, selectedProduct.category, selectedDate);
     
     setSelectedProduct(null);
     setSearchTerm("");
@@ -110,7 +134,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     setQuantity("1");
   };
 
-  const saveTransaction = (description: string, val: number, cat: string) => {
+  const saveTransaction = (description: string, val: number, cat: string, date: Date) => {
     if (!db) return;
     const transactionId = Math.random().toString(36).substr(2, 9);
     const transactionRef = doc(db, "users", userId, "transactions", transactionId);
@@ -120,7 +144,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       description: description,
       amount: val,
       type: 'expense',
-      date: new Date().toISOString(),
+      date: date.toISOString(),
       category: cat || 'Mercado',
       categoryId: 'expense_default',
     }, { merge: true });
@@ -169,7 +193,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const handleBulkAdd = () => {
     reviewItems.filter(i => i.selected).forEach(item => {
-      saveTransaction(item.name, item.price, item.category);
+      saveTransaction(item.name, item.price, item.category, selectedDate);
     });
     toast({ title: "Itens adicionados", description: "As compras foram registradas no seu extrato." });
     setIsReviewOpen(false);
@@ -337,18 +361,18 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full md:w-auto">
-                <div className="w-full sm:w-24 space-y-2">
+                <div className="w-full sm:w-20 space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Qtd</Label>
                   <Input
                     type="number"
                     min="1"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    className="bg-white/5 border-white/10 h-14 sm:h-16 rounded-2xl focus:border-accent/50 text-center text-xl font-black text-white"
+                    className="bg-white/5 border-white/10 h-14 rounded-2xl focus:border-accent/50 text-center text-xl font-black text-white"
                   />
                 </div>
 
-                <div className="w-full sm:w-48 space-y-2">
+                <div className="w-full sm:w-40 space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Preço Un.</Label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-accent text-lg">R$</span>
@@ -358,9 +382,30 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                       placeholder="0,00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="bg-white/5 border-white/10 h-14 sm:h-16 rounded-2xl focus:border-accent/50 pl-12 text-xl sm:text-2xl font-black text-accent"
+                      className="bg-white/5 border-white/10 h-14 rounded-2xl focus:border-accent/50 pl-12 text-xl font-black text-accent"
                     />
                   </div>
+                </div>
+
+                <div className="w-full sm:w-44 space-y-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-full bg-white/5 border border-white/10 h-14 rounded-2xl flex items-center justify-between px-4 text-white hover:bg-white/10 transition-all">
+                        <span className="text-sm font-black">{format(selectedDate, "dd/MM/yy")}</span>
+                        <CalendarIcon className="h-5 w-5 text-accent" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-card border-white/10" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
