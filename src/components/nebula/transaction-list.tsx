@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -85,10 +86,8 @@ export function TransactionList({ transactions, userId, showAll = false, compact
 
   const getCategoryInfo = (category: string | undefined) => {
     if (!category) return null;
-    // Tenta correspondência exata
     if (CATEGORY_DATA[category]) return CATEGORY_DATA[category];
     
-    // Tenta correspondência sem espaços e ignorando maiúsculas
     const normalized = category.trim().toLowerCase();
     const foundKey = Object.keys(CATEGORY_DATA).find(
       key => key.toLowerCase() === normalized
@@ -135,7 +134,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                 "font-bold text-sm",
                 tx.type === 'income' ? "text-income" : "text-expense"
               )}>
-                {tx.type === 'income' ? '+' : '-'}R$ {formatCurrency(tx.amount)}
+                R$ {formatCurrency(tx.amount)}
               </p>
             </div>
           </div>
@@ -190,7 +189,7 @@ export function TransactionList({ transactions, userId, showAll = false, compact
                         tx.type === 'income' ? "text-income" : "text-expense"
                       )}
                     >
-                      {tx.type === 'income' ? '+' : '-'}R$ {formatCurrency(tx.amount)}
+                      R$ {formatCurrency(tx.amount)}
                     </p>
                   </div>
                   <button 
