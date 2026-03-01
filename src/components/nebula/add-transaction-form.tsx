@@ -3,10 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { 
   ShoppingBag, 
   Database, 
-  Flame, 
   Search, 
   Camera, 
   Loader2, 
@@ -26,7 +26,8 @@ import {
   Dog,
   Gamepad2,
   Bus,
-  Edit2
+  Edit2,
+  Scale
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, orderBy, limit } from "firebase/firestore";
@@ -57,7 +58,7 @@ const CATEGORIES = [
   { id: 'Padaria', name: "Padaria", icon: Store, color: "bg-[#FFFFB2]" },
   { id: 'Laticínios', name: "Laticínios", icon: Milk, color: "bg-[#B2D6FF]" },
   { id: 'Mercearia', name: "Mercearia", icon: ShoppingBasket, color: "bg-[#FFD1B2]" },
-  { id: 'Temperos', name: "Temperos", icon: Flame, color: "bg-[#FFB2D6]" },
+  { id: 'Temperos', name: "Temperos", icon: Coffee, color: "bg-[#FFB2D6]" },
   { id: 'Bebidas', name: "Bebidas", icon: Coffee, color: "bg-[#B2B2FF]" },
   { id: 'Limpeza', name: "Limpeza", icon: Wind, color: "bg-[#B2FFFF]" },
   { id: 'Higiene', name: "Higiene", icon: Droplets, color: "bg-[#E2FFB2]" },
@@ -75,6 +76,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [amount, setAmount] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [isKg, setIsKg] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
 
@@ -108,25 +110,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
   const { data: establishments } = useCollection(establishmentsQuery);
 
-  // Fetch latest transaction for date suggestion
-  const latestTxQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(
-      collection(db, "users", userId, "transactions"), 
-      orderBy("date", "desc"),
-      limit(1)
-    );
-  }, [db, userId]);
-
-  const { data: latestTxs } = useCollection(latestTxQuery);
-
-  useEffect(() => {
-    if (latestTxs && latestTxs.length > 0) {
-      setSelectedDate(new Date(latestTxs[0].date));
-    }
-  }, [latestTxs]);
-
-  // Fetch price entries
   const entriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, "users", userId, "price_entries"), orderBy("date", "desc"));
@@ -146,7 +129,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
     const qty = parseFloat(quantity.replace(',', '.')) || 1;
     const totalAmount = parseFloat(amount) * qty;
-    const description = `${selectedProduct.name}${qty !== 1 ? ` (x${quantity})` : ''}`;
+    const unitLabel = isKg ? "kg" : "un";
+    const description = `${selectedProduct.name} (${quantity}${unitLabel})`;
     
     saveTransaction(description, totalAmount, selectedProduct.category, selectedDate);
     
@@ -154,6 +138,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     setSearchTerm("");
     setAmount("");
     setQuantity("1");
+    setIsKg(false);
   };
 
   const saveTransaction = (description: string, val: number, cat: string, date: Date) => {
@@ -216,7 +201,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
           name: match ? match.name : item.name, 
           matchedProduct: match || null, 
           selected: !!match,
-          quantity: "1" 
+          quantity: "1",
+          isKg: false
         };
       });
 
@@ -236,7 +222,8 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     reviewItems.filter(i => i.selected).forEach(item => {
       const qty = parseFloat(item.quantity.replace(',', '.')) || 1;
       const totalVal = item.price * qty;
-      const desc = `${item.name}${qty !== 1 ? ` (x${item.quantity})` : ''} @ ${reviewEstablishment}`;
+      const unitLabel = item.isKg ? "kg" : "un";
+      const desc = `${item.name} (${item.quantity}${unitLabel}) @ ${reviewEstablishment}`;
       saveTransaction(desc, totalVal, item.category, reviewDate);
     });
     toast({ title: "Itens adicionados", description: "As compras foram registradas no seu extrato." });
@@ -342,6 +329,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                         onClick={() => {
                           setSelectedProduct(p);
                           setQuantity("1");
+                          setIsKg(false);
                         }}
                         className={cn(
                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
@@ -363,6 +351,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                             setSelectedProduct(p);
                             setAmount(sp.price.toString());
                             setQuantity("1");
+                            setIsKg(false);
                           }}
                           className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all group/price"
                         >
@@ -371,13 +360,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                           <span className="text-accent group-hover/price:text-accent-foreground">R$ {sp.price.toFixed(2)}</span>
                         </button>
                       ))}
-                      {storePrices.length === 0 && (
-                        <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-[0.2em] italic py-2">Sem histórico de preços</p>
-                      )}
                     </div>
-                  </div>
-                  <div className="absolute -right-8 -bottom-8 p-12 opacity-[0.03] group-hover:opacity-[0.08] transition-all group-hover:scale-110 pointer-events-none">
-                    <Database className="h-32 w-32 text-accent" />
                   </div>
                 </div>
               );
@@ -400,12 +383,19 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full md:w-auto">
+                <div className="flex flex-col items-center gap-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">{isKg ? "Peso (Kg)" : "Qtd (Un)"}</Label>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-2 rounded-xl">
+                    <Scale className={cn("h-4 w-4 transition-colors", !isKg ? "text-accent" : "text-muted-foreground")} />
+                    <Switch checked={isKg} onValueChange={setIsKg} />
+                    <Scale className={cn("h-4 w-4 transition-colors", isKg ? "text-accent" : "text-muted-foreground")} />
+                  </div>
+                </div>
+
                 <div className="w-full sm:w-24 space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Qtd / Kg</Label>
                   <Input
                     type="number"
-                    step="0.001"
-                    min="0.001"
+                    step={isKg ? "0.001" : "1"}
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     className="bg-white/5 border-white/10 h-14 rounded-2xl focus:border-accent/50 text-center text-xl font-black text-white"
@@ -413,7 +403,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                 </div>
 
                 <div className="w-full sm:w-40 space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Preço Un.</Label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-accent text-lg">R$</span>
                     <Input
@@ -428,7 +417,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                 </div>
 
                 <div className="w-full sm:w-44 space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1 text-center block sm:text-left">Data</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button className="w-full bg-white/5 border border-white/10 h-14 rounded-2xl flex items-center justify-between px-4 text-white hover:bg-white/10 transition-all">
@@ -454,14 +442,14 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               <Button 
                 onClick={() => setSelectedProduct(null)}
                 variant="ghost"
-                className="flex-1 h-14 sm:h-16 px-4 sm:px-6 rounded-2xl text-muted-foreground hover:text-white font-black uppercase text-[10px] tracking-widest"
+                className="flex-1 h-14 rounded-2xl text-muted-foreground hover:text-white font-black uppercase text-[10px] tracking-widest"
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleManualSubmit}
                 disabled={!amount}
-                className="flex-[2] h-14 sm:h-16 px-4 sm:px-12 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-accent/20 rounded-2xl transition-all active:scale-95"
+                className="flex-[2] h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-accent/20 rounded-2xl transition-all"
               >
                 Confirmar
               </Button>
@@ -480,10 +468,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
             <canvas ref={canvasRef} className="hidden" />
             {isAnalyzing && (
               <div className="absolute inset-0 bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center gap-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-cyan-400/20 blur-2xl rounded-full animate-pulse" />
-                  <Loader2 className="h-16 w-16 text-cyan-400 animate-spin relative z-10" />
-                </div>
+                <Loader2 className="h-16 w-16 text-cyan-400 animate-spin" />
                 <p className="text-cyan-400 font-black uppercase tracking-[0.5em] text-sm animate-pulse">Lendo Nota...</p>
               </div>
             )}
@@ -497,10 +482,10 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       )}
 
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="max-w-2xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2.5rem] sm:rounded-[3rem] p-0 overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
-          <DialogHeader className="p-8 sm:p-10 pb-6 bg-gradient-to-br from-indigo-950/40 to-transparent flex-shrink-0">
-            <DialogTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-accent flex items-center gap-4 italic">
-              <Edit2 className="h-6 w-6 sm:h-8 sm:w-8" />
+        <DialogContent className="max-w-2xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2.5rem] p-0 overflow-hidden shadow-2xl h-[90vh] flex flex-col">
+          <DialogHeader className="p-8 sm:p-10 pb-6 flex-shrink-0">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-accent flex items-center gap-4 italic">
+              <Edit2 className="h-6 w-6" />
               Revisar Notinha
             </DialogTitle>
           </DialogHeader>
@@ -509,18 +494,18 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
             <div className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/[0.03] p-6 rounded-[2rem] border border-white/5">
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Estabelecimento</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Estabelecimento</Label>
                   <Input 
                     value={reviewEstablishment}
                     onChange={(e) => setReviewEstablishment(e.target.value)}
-                    className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-accent/40 font-bold"
+                    className="bg-white/5 border-white/10 h-12 rounded-xl font-bold"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Data da Compra</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Data</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-full bg-white/5 border border-white/10 h-12 rounded-xl flex items-center justify-between px-4 text-white hover:bg-white/10 transition-all">
+                      <button className="w-full bg-white/5 border border-white/10 h-12 rounded-xl flex items-center justify-between px-4 text-white">
                         <span className="text-sm font-bold">{format(reviewDate, "dd/MM/yyyy")}</span>
                         <CalendarIcon className="h-4 w-4 text-accent" />
                       </button>
@@ -539,83 +524,82 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               </div>
 
               <div className="space-y-4">
-                <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-300/60 ml-1">Itens Extraídos ({reviewItems.length})</Label>
-                <div className="grid gap-4">
-                  {reviewItems.map((item, idx) => (
-                    <div 
-                      key={idx} 
-                      className={cn(
-                        "p-5 rounded-[2rem] border-2 transition-all flex flex-col gap-4",
-                        item.selected 
-                          ? "bg-accent/5 border-accent/20" 
-                          : "bg-white/[0.02] border-white/5"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <Input 
-                            value={item.name}
-                            onChange={(e) => {
-                              const newItems = [...reviewItems];
-                              newItems[idx].name = e.target.value;
-                              setReviewItems(newItems);
-                            }}
-                            className="bg-transparent border-none p-0 h-auto text-sm sm:text-base font-black truncate focus-visible:ring-0"
-                          />
-                          <p className="text-[10px] font-black uppercase tracking-widest text-accent mt-1">R$ {item.price.toFixed(2)}</p>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
+                {reviewItems.map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className={cn(
+                      "p-5 rounded-[2rem] border-2 transition-all flex flex-col gap-4",
+                      item.selected ? "bg-accent/5 border-accent/20" : "bg-white/[0.02] border-white/5"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <Input 
+                          value={item.name}
+                          onChange={(e) => {
                             const newItems = [...reviewItems];
-                            newItems[idx].selected = !newItems[idx].selected;
+                            newItems[idx].name = e.target.value;
                             setReviewItems(newItems);
                           }}
-                          className={cn(
-                            "h-10 w-10 rounded-xl transition-all flex-shrink-0",
-                            item.selected ? "bg-accent text-accent-foreground" : "bg-white/5 text-muted-foreground"
-                          )}
-                        >
-                          {item.selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        </Button>
+                          className="bg-transparent border-none p-0 h-auto text-sm font-black focus-visible:ring-0"
+                        />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-accent mt-1">R$ {item.price.toFixed(2)}</p>
                       </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          const newItems = [...reviewItems];
+                          newItems[idx].selected = !newItems[idx].selected;
+                          setReviewItems(newItems);
+                        }}
+                        className={cn("h-10 w-10 rounded-xl", item.selected ? "bg-accent text-accent-foreground" : "bg-white/5 text-muted-foreground")}
+                      >
+                        {item.selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      </Button>
+                    </div>
 
-                      {item.selected && (
-                        <div className="flex items-center gap-4 pt-2 border-t border-white/5">
-                          <div className="flex-1 space-y-1.5">
-                            <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Qtd / Kg</Label>
-                            <Input 
-                              type="number"
-                              step="0.001"
-                              min="0.001"
-                              value={item.quantity}
-                              onChange={(e) => {
-                                const newItems = [...reviewItems];
-                                newItems[idx].quantity = e.target.value;
-                                setReviewItems(newItems);
-                              }}
-                              className="bg-white/5 border-white/10 h-10 rounded-lg text-center font-bold"
-                            />
-                          </div>
-                          <div className="flex-[2] space-y-1.5">
-                            <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground ml-1">Preço Final</Label>
-                            <div className="h-10 bg-white/5 rounded-lg flex items-center px-3 font-black text-xs text-accent">
-                              R$ {(item.price * (parseFloat(item.quantity.replace(',', '.')) || 1)).toFixed(2)}
-                            </div>
+                    {item.selected && (
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                        <div className="space-y-2">
+                          <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Unid / Kg</Label>
+                          <div className="flex items-center gap-2">
+                             <Switch 
+                               checked={item.isKg} 
+                               onValueChange={(val) => {
+                                 const newItems = [...reviewItems];
+                                 newItems[idx].isKg = val;
+                                 setReviewItems(newItems);
+                               }}
+                             />
+                             <span className="text-[9px] font-black uppercase text-accent">{item.isKg ? "Kg" : "Un"}</span>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                        <div className="space-y-2">
+                          <Label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Quantidade</Label>
+                          <Input 
+                            type="number"
+                            step={item.isKg ? "0.001" : "1"}
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newItems = [...reviewItems];
+                              newItems[idx].quantity = e.target.value;
+                              setReviewItems(newItems);
+                            }}
+                            className="bg-white/5 border-white/10 h-10 rounded-lg text-center font-bold"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </ScrollArea>
 
-          <DialogFooter className="p-8 sm:p-10 pt-6 border-t border-white/5 bg-white/[0.02] flex-shrink-0">
-            <Button variant="ghost" onClick={() => setIsReviewOpen(false)} className="h-14 sm:h-16 px-6 font-black uppercase tracking-widest text-[10px] hover:bg-white/5">Descartar</Button>
-            <Button onClick={handleBulkAdd} className="h-14 sm:h-16 px-8 sm:px-12 bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-2xl shadow-accent/30 active:scale-95 transition-all">
+          <DialogFooter className="p-8 sm:p-10 pt-6 border-t border-white/5 flex-shrink-0">
+            <Button variant="ghost" onClick={() => setIsReviewOpen(false)} className="font-black uppercase tracking-widest text-[10px]">Descartar</Button>
+            <Button onClick={handleBulkAdd} className="bg-accent text-accent-foreground font-black uppercase tracking-[0.2em] text-xs rounded-2xl">
               Confirmar ({reviewItems.filter(i => i.selected).length})
             </Button>
           </DialogFooter>
