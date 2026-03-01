@@ -277,12 +277,12 @@ export function AdvisorView() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2 p-1 bg-indigo-950/20 border border-white/5 rounded-xl w-fit">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex gap-2 p-1 bg-indigo-950/20 border border-white/5 rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('produtos')}
             className={cn(
-              "px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.2em] transition-all",
+              "flex-1 sm:flex-none px-6 sm:px-8 py-2.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap",
               activeTab === 'produtos' 
                 ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(255,230,120,0.3)]" 
                 : "text-muted-foreground hover:text-foreground"
@@ -293,7 +293,7 @@ export function AdvisorView() {
           <button
             onClick={() => setActiveTab('estabelecimentos')}
             className={cn(
-              "px-8 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.2em] transition-all",
+              "flex-1 sm:flex-none px-6 sm:px-8 py-2.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap",
               activeTab === 'estabelecimentos' 
                 ? "bg-accent text-accent-foreground shadow-[0_0_20px_rgba(255,230,120,0.3)]" 
                 : "text-muted-foreground hover:text-foreground"
@@ -305,7 +305,7 @@ export function AdvisorView() {
 
         <Button 
           onClick={() => setIsCameraOpen(true)}
-          className="h-12 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+          className="w-full sm:w-auto h-12 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
         >
           <Camera className="h-4 w-4" />
           Notinha
@@ -358,20 +358,20 @@ export function AdvisorView() {
 
       {activeTab === 'produtos' ? (
         <div className="space-y-8">
-          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2.5rem] p-6 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.02]">
+          <Card className="bg-[#1a1b2e] border-indigo-500/10 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.02] hidden sm:block">
               <LayoutPanelLeft className="h-32 w-32 text-accent" />
             </div>
             
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-headline font-black text-accent italic uppercase tracking-tighter flex items-center gap-3">
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+              <h3 className="text-lg sm:text-xl font-headline font-black text-accent italic uppercase tracking-tighter flex items-center gap-3">
                 <Plus className="h-5 w-5 glow-accent" />
                 Adicionar Produto
               </h3>
             </div>
             
             <form onSubmit={handleSaveProduct} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Estabelecimento</label>
                   <Select value={formEstId} onValueChange={setFormEstId}>
@@ -429,8 +429,8 @@ export function AdvisorView() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="w-full max-w-[240px] space-y-1.5">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-6 pt-2">
+                <div className="w-full sm:max-w-[240px] space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Coleta</label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -458,7 +458,7 @@ export function AdvisorView() {
                   </Popover>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Button 
                     type="button" 
                     variant="ghost" 
@@ -516,13 +516,11 @@ export function AdvisorView() {
                 const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
                 
                 // Optimized "Best Store" Logic:
-                // For each store, find their MOST RECENT price entry.
-                // Among those most recent entries, pick the one with the lowest price.
+                // Pick the one with the lowest price among the latest entries for each store
                 let bestEntryOverall = null;
                 
                 if (productEntries.length > 0) {
                   const latestByStore = new Map();
-                  // productEntries is ordered by date DESC from the query (since allEntries is DESC)
                   productEntries.forEach(entry => {
                     if (!latestByStore.has(entry.storeId)) {
                       latestByStore.set(entry.storeId, entry);
@@ -540,54 +538,55 @@ export function AdvisorView() {
                 const categoryData = CATEGORIES.find(c => c.name === product.category);
 
                 return (
-                  <Card key={product.name} className="bg-indigo-950/10 border-white/5 rounded-[2rem] overflow-hidden group hover:border-accent/20 transition-all">
-                    <CardContent className="p-8 space-y-8">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <span className="text-[9px] font-black tracking-[0.2em] bg-accent/10 text-accent px-4 py-1.5 rounded-full uppercase">
+                  <Card key={product.name} className="bg-indigo-950/10 border-white/5 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden group hover:border-accent/20 transition-all">
+                    <CardContent className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+                      <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
+                        <div className="space-y-3 w-full lg:flex-1">
+                          <span className="inline-block text-[9px] font-black tracking-[0.2em] bg-accent/10 text-accent px-4 py-1.5 rounded-full uppercase">
                             {categoryData?.emoji} {product.category}
                           </span>
-                          <h3 className="text-3xl font-bold tracking-tight mt-3">{product.name}</h3>
-                        </div>
-                        <div className="flex gap-4 items-start">
-                           {bestEntryOverall ? (
-                             <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl px-6 py-4 flex items-center gap-6 shadow-[0_0_20px_rgba(34,211,238,0.05)]">
-                                <div className="flex items-center gap-4">
-                                  <div className="p-2.5 bg-cyan-500/20 rounded-xl">
-                                    <Trophy className="h-5 w-5 text-cyan-400" />
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
-                                    <p className="font-bold text-lg">{bestEntryOverall.storeName}</p>
-                                  </div>
-                                </div>
-                                <div className="text-right border-l border-cyan-500/20 pl-6">
-                                  <p className="text-2xl font-black text-cyan-400">R$ {bestEntryOverall.price.toFixed(2)}</p>
-                                </div>
-                             </div>
-                           ) : (
-                             <div className="text-right">
-                                <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Sem Coletas</p>
-                                <p className="text-3xl font-black text-muted-foreground/20">R$ 0,00</p>
-                              </div>
-                           )}
+                          <div className="flex justify-between items-start gap-4">
+                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight">{product.name}</h3>
                             <button 
                               onClick={() => handleDeleteProductGroup(product.name)}
-                              className="text-muted-foreground hover:text-expense transition-colors mt-4"
+                              className="text-muted-foreground hover:text-expense transition-colors shrink-0"
                             >
                               <Trash2 className="h-5 w-5" />
                             </button>
+                          </div>
                         </div>
+                        
+                        {bestEntryOverall ? (
+                          <div className="w-full lg:w-auto bg-cyan-500/10 border border-cyan-500/20 rounded-2xl px-4 py-4 sm:px-6 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 shadow-[0_0_20px_rgba(34,211,238,0.05)]">
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="p-2 sm:p-2.5 bg-cyan-500/20 rounded-xl shrink-0">
+                                <Trophy className="h-4 w-4 sm:h-5 sm:h-5 text-cyan-400" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[8px] sm:text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Melhor Loja Recentemente</p>
+                                <p className="font-bold text-base sm:text-lg truncate">{bestEntryOverall.storeName}</p>
+                              </div>
+                            </div>
+                            <div className="w-full sm:w-auto sm:text-right sm:border-l border-cyan-500/20 sm:pl-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                              <p className="text-xl sm:text-2xl font-black text-cyan-400">R$ {bestEntryOverall.price.toFixed(2)}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-full lg:w-auto lg:text-right">
+                            <p className="text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase">Sem Coletas</p>
+                            <p className="text-2xl sm:text-3xl font-black text-muted-foreground/20">R$ 0,00</p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-8">
-                        <div className="space-y-2">
-                          <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Menor Histórico</p>
-                          <p className="text-lg font-bold">R$ {minHistory.toFixed(2)}</p>
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8 border-t border-white/5 pt-6 sm:pt-8">
+                        <div className="space-y-1 sm:space-y-2">
+                          <p className="text-[8px] sm:text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Menor Histórico</p>
+                          <p className="text-base sm:text-lg font-bold">R$ {minHistory.toFixed(2)}</p>
                         </div>
-                        <div className="space-y-2 border-l border-white/5 pl-8">
-                          <p className="text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Variação de Preço</p>
-                          <p className="text-lg font-bold">R$ {variation.toFixed(2)}</p>
+                        <div className="space-y-1 sm:space-y-2 border-l border-white/5 pl-4 sm:pl-8">
+                          <p className="text-[8px] sm:text-[9px] font-black tracking-[0.2em] text-indigo-400/60 uppercase">Variação de Preço</p>
+                          <p className="text-base sm:text-lg font-bold">R$ {variation.toFixed(2)}</p>
                         </div>
                       </div>
 
@@ -595,7 +594,7 @@ export function AdvisorView() {
                         <CollapsibleTrigger className="flex items-center justify-between w-full group/collapsible">
                           <div className="flex items-center gap-2">
                             <History className="h-4 w-4 text-indigo-400" />
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Coletas</p>
+                            <p className="text-[9px] sm:text-[10px] font-black text-indigo-400 uppercase tracking-widest">Histórico de Coletas</p>
                           </div>
                           <ChevronDown className="h-4 w-4 text-indigo-400 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
                         </CollapsibleTrigger>
@@ -605,14 +604,12 @@ export function AdvisorView() {
                           ) : (
                             productEntries.map((entry) => (
                               <div key={entry.id} className="flex items-center justify-between text-xs py-3 group/entry border-b border-white/[0.03] last:border-0">
-                                <div className="flex items-center gap-10">
-                                  <span className="font-bold text-indigo-200 w-24 truncate">{entry.storeName}</span>
-                                  <span className="text-muted-foreground font-mono text-[10px]">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-10 min-w-0">
+                                  <span className="font-bold text-indigo-200 truncate">{entry.storeName}</span>
+                                  <span className="text-muted-foreground font-mono text-[9px] sm:text-[10px]">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
                                 </div>
-                                <div className="flex items-center gap-8">
-                                  <div className="text-right">
-                                    <p className="font-bold text-income">R$ {entry.price.toFixed(2)}</p>
-                                  </div>
+                                <div className="text-right shrink-0">
+                                  <p className="font-bold text-income">R$ {entry.price.toFixed(2)}</p>
                                 </div>
                               </div>
                             ))
@@ -628,12 +625,12 @@ export function AdvisorView() {
         </div>
       ) : (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-          <Card className="nebula-card border-accent/20 rounded-[2.5rem] p-8 relative overflow-hidden">
-             <div className="absolute -right-10 -top-10 opacity-[0.03]">
+          <Card className="nebula-card border-accent/20 rounded-[1.5rem] sm:rounded-[2.5rem] p-6 sm:p-8 relative overflow-hidden">
+             <div className="absolute -right-10 -top-10 opacity-[0.03] hidden sm:block">
                 <Store className="h-40 w-40 text-accent" />
              </div>
-            <h3 className="text-xl font-black uppercase tracking-[0.2em] text-accent mb-8 flex items-center gap-3">
-              <Plus className="h-6 w-6 glow-accent" />
+            <h3 className="text-lg sm:text-xl font-black uppercase tracking-[0.2em] text-accent mb-6 sm:mb-8 flex items-center gap-3">
+              <Plus className="h-5 w-5 sm:h-6 sm:h-6 glow-accent" />
               Cadastrar Loja
             </h3>
             <form onSubmit={handleAddEstablishment} className="flex flex-col sm:flex-row gap-4 relative z-10">
@@ -641,9 +638,9 @@ export function AdvisorView() {
                 placeholder="Ex: Mercado Central..."
                 value={newEstName}
                 onChange={(e) => setNewEstName(e.target.value)}
-                className="bg-white/5 border-white/5 h-16 rounded-2xl focus:border-accent/40 transition-all text-sm font-medium flex-1 px-6"
+                className="bg-white/5 border-white/5 h-14 sm:h-16 rounded-xl sm:rounded-2xl focus:border-accent/40 transition-all text-sm font-medium flex-1 px-6"
               />
-              <Button type="submit" className="h-16 px-10 bg-accent text-accent-foreground font-black uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-accent/10 group transition-all">
+              <Button type="submit" className="h-14 sm:h-16 px-10 bg-accent text-accent-foreground font-black uppercase tracking-[0.3em] rounded-xl sm:rounded-2xl shadow-xl shadow-accent/10 group transition-all">
                 Adicionar
                 <Plus className="ml-3 h-5 w-5 transition-transform group-hover:rotate-90" />
               </Button>
@@ -652,22 +649,22 @@ export function AdvisorView() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(!establishments || establishments.length === 0) ? (
-              <div className="md:col-span-2 lg:col-span-3 py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">Nenhuma loja cadastrada.</p>
+              <div className="md:col-span-2 lg:col-span-3 py-24 text-center border-2 border-dashed border-white/5 rounded-[2rem] sm:rounded-[3rem]">
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">Nenhuma loja cadastrada.</p>
               </div>
             ) : (
               establishments.map((est) => (
-                <Card key={est.id} className="bg-indigo-950/10 border-white/5 rounded-[2rem] p-6 flex items-center justify-between group hover:border-accent/30 transition-all relative overflow-hidden">
-                  <div className="flex items-center gap-5 relative z-10">
-                    <div className="p-4 bg-accent/10 rounded-2xl group-hover:bg-accent/20 transition-colors">
-                      <Store className="h-7 w-7 text-accent" />
+                <Card key={est.id} className="bg-indigo-950/10 border-white/5 rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-6 flex items-center justify-between group hover:border-accent/30 transition-all relative overflow-hidden">
+                  <div className="flex items-center gap-4 sm:gap-5 relative z-10">
+                    <div className="p-3 sm:p-4 bg-accent/10 rounded-xl sm:rounded-2xl group-hover:bg-accent/20 transition-colors">
+                      <Store className="h-6 w-6 sm:h-7 sm:h-7 text-accent" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-lg tracking-tight">{est.name}</h4>
-                      <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
+                      <h4 className="font-bold text-base sm:text-lg tracking-tight">{est.name}</h4>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
                     </div>
                   </div>
-                  <Zap className="h-5 w-5 text-accent/10 group-hover:text-accent transition-all relative z-10" />
+                  <Zap className="h-4 w-4 sm:h-5 sm:h-5 text-accent/10 group-hover:text-accent transition-all relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Card>
               ))
@@ -678,4 +675,3 @@ export function AdvisorView() {
     </div>
   );
 }
-
