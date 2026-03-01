@@ -3,11 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { TransactionType } from "@/lib/types";
-import { PlusCircle, Database, LayoutPanelLeft, Zap } from "lucide-react";
-import { useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ShoppingBag, Database, LayoutPanelLeft, Zap } from "lucide-react";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { doc, collection, query, orderBy } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface AddTransactionFormProps {
@@ -16,30 +15,41 @@ interface AddTransactionFormProps {
 
 export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const db = useFirestore();
-  const [description, setDescription] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
   const [amount, setAmount] = useState("");
-  const [type, setType] = useState<TransactionType>("expense");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Fetch products to populate the selection
+  const productsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "users", userId, "products"), orderBy("name"));
+  }, [db, userId]);
+
+  const { data: products } = useCollection(productsQuery);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !amount || !db) return;
+    if (!selectedProductId || !amount || !db) return;
+
+    const product = products?.find(p => p.id === selectedProductId);
+    if (!product) return;
 
     const transactionId = Math.random().toString(36).substr(2, 9);
     const transactionRef = doc(db, "users", userId, "transactions", transactionId);
     
     const newTx = {
       id: transactionId,
-      description,
+      description: product.name,
       amount: parseFloat(amount),
-      type,
+      type: 'expense' as const, // Always expense for products
       date: new Date(date).toISOString(),
-      categoryId: type === 'income' ? 'income_default' : 'expense_default',
+      category: product.category || 'Mercado',
+      categoryId: 'expense_default',
     };
 
     setDocumentNonBlocking(transactionRef, newTx, { merge: true });
 
-    setDescription("");
+    setSelectedProductId("");
     setAmount("");
   };
 
@@ -51,24 +61,32 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       <CardHeader>
         <CardTitle className="text-2xl font-headline font-black flex items-center gap-3 text-accent italic uppercase tracking-tighter">
           <LayoutPanelLeft className="h-6 w-6 glow-accent" />
-          Nova Transação
+          Registrar Compra
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid gap-8 sm:grid-cols-2">
             <div className="space-y-3">
-              <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Descrição</Label>
-              <Input
-                id="description"
-                placeholder="Ex: Salário, Supermercado..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-sm font-medium"
-              />
+              <Label htmlFor="product" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Produto</Label>
+              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                <SelectTrigger id="product" className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-sm font-medium">
+                  <SelectValue placeholder="Selecione um produto..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-950 border-white/10 text-white">
+                  {products?.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                  {(!products || products.length === 0) && (
+                    <SelectItem value="none" disabled>Nenhum produto cadastrado</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-3">
-              <Label htmlFor="amount" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Valor (R$)</Label>
+              <Label htmlFor="amount" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Valor Pago (R$)</Label>
               <Input
                 id="amount"
                 type="number"
@@ -83,7 +101,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
           <div className="grid gap-8 sm:grid-cols-2 items-end">
             <div className="space-y-3">
-              <Label htmlFor="date" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data</Label>
+              <Label htmlFor="date" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Data da Compra</Label>
               <Input
                 id="date"
                 type="date"
@@ -92,27 +110,16 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                 className="bg-white/5 border-white/5 h-14 rounded-2xl focus:border-accent/50 focus:bg-white/[0.08] transition-all px-5 text-sm font-medium"
               />
             </div>
-            <div className="space-y-4">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Tipo</Label>
-              <RadioGroup
-                value={type}
-                onValueChange={(v) => setType(v as TransactionType)}
-                className="flex gap-8 pt-1"
-              >
-                <div className="flex items-center space-x-3 cursor-pointer group/radio">
-                  <RadioGroupItem value="income" id="income" className="text-income border-income/40 w-5 h-5" />
-                  <Label htmlFor="income" className="text-income font-black text-xs uppercase tracking-[0.2em] cursor-pointer group-hover/radio:text-income/100">Entrada</Label>
-                </div>
-                <div className="flex items-center space-x-3 cursor-pointer group/radio">
-                  <RadioGroupItem value="expense" id="expense" className="text-expense border-expense/40 w-5 h-5" />
-                  <Label htmlFor="expense" className="text-expense font-black text-xs uppercase tracking-[0.2em] cursor-pointer group-hover/radio:text-expense/100">Saída</Label>
-                </div>
-              </RadioGroup>
+            <div className="space-y-3">
+               <div className="h-14 flex items-center px-5 bg-expense/10 rounded-2xl border border-expense/20">
+                  <ShoppingBag className="h-4 w-4 text-expense mr-3" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-expense">Lançamento de Saída</span>
+               </div>
             </div>
           </div>
 
           <Button type="submit" className="w-full h-16 bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm uppercase tracking-[0.4em] shadow-xl shadow-accent/20 rounded-2xl group transition-all">
-            Salvar Lançamento
+            Salvar no Extrato
             <Zap className="ml-3 h-4 w-4 group-hover:fill-current transition-all" />
           </Button>
         </form>
