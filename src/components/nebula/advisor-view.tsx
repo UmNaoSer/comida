@@ -16,7 +16,7 @@ import {
   Trophy, 
   Store, 
   LayoutPanelLeft, 
-  Zap, 
+  Flame, 
   ShoppingBag, 
   History, 
   Trash2, 
@@ -819,7 +819,6 @@ export function AdvisorView() {
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-[0.2em] mt-1">{est.type || "Loja"}</p>
                     </div>
                   </div>
-                  <Zap className="h-4 w-4 sm:h-5 text-accent/10 group-hover:text-accent transition-all relative z-10 shrink-0" />
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Card>
               ))

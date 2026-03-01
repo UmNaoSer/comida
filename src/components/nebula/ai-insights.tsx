@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, BrainCircuit, Lightbulb, Loader2, Zap } from 'lucide-react';
+import { Sparkles, BrainCircuit, Lightbulb, Loader2 } from 'lucide-react';
 import { getFinancialAdvisorInsights, type FinancialAdvisorInsightsOutput } from '@/ai/flows/financial-advisor-insights-flow';
 import { Transaction } from '@/lib/types';
 
@@ -67,7 +67,9 @@ export function AIInsights({ transactions }: AIInsightsProps) {
           <div className="py-12 flex flex-col items-center gap-4">
             <div className="relative">
               <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full animate-pulse" />
-              <Zap className="h-10 w-10 text-accent animate-bounce relative z-10" />
+              <div className="h-10 w-10 text-accent animate-bounce relative z-10 flex items-center justify-center">
+                <BrainCircuit className="h-8 w-8" />
+              </div>
             </div>
             <p className="text-[10px] text-accent font-black uppercase tracking-[0.4em] animate-pulse">Processando dados...</p>
           </div>

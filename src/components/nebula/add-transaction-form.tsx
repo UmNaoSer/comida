@@ -7,7 +7,7 @@ import {
   ShoppingBag, 
   Database, 
   LayoutPanelLeft, 
-  Zap, 
+  Flame, 
   Search, 
   Camera, 
   Loader2, 
@@ -62,7 +62,7 @@ const CATEGORIES = [
   { id: 'Padaria', name: "Padaria", icon: Store },
   { id: 'Laticínios', name: "Laticínios", icon: Milk },
   { id: 'Mercearia', name: "Mercearia", icon: ShoppingBasket },
-  { id: 'Temperos', name: "Temperos", icon: Zap },
+  { id: 'Temperos', name: "Temperos", icon: Flame },
   { id: 'Bebidas', name: "Bebidas", icon: Coffee },
   { id: 'Limpeza', name: "Limpeza", icon: Wind },
   { id: 'Higiene', name: "Higiene", icon: Droplets },
@@ -278,7 +278,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.length === 0 ? (
             <div className="col-span-full py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-              <Sparkles className="h-12 w-12 text-white/5 mx-auto mb-4" />
               <p className="text-[11px] text-muted-foreground uppercase tracking-[0.4em] font-black italic">Nenhum produto encontrado</p>
             </div>
           ) : (
