@@ -26,7 +26,12 @@ import {
   Plus,
   Store,
   Sparkles,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Milk,
+  ShoppingBasket,
+  Dog,
+  Gamepad2,
+  Bus
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, orderBy, limit } from "firebase/firestore";
@@ -52,20 +57,26 @@ interface AddTransactionFormProps {
 }
 
 const CATEGORIES = [
-  { id: 'Mercado', name: "Mercado", icon: Utensils },
+  { id: 'Açougue', name: "Açougue", icon: Beef },
   { id: 'Hortifruti', name: "Hortifruti", icon: Apple },
-  { id: 'Carnes', name: "Carnes", icon: Beef },
-  { id: 'Higiene', name: "Higiene", icon: Droplets },
-  { id: 'Limpeza', name: "Limpeza", icon: Wind },
+  { id: 'Padaria', name: "Padaria", icon: Store },
+  { id: 'Laticínios', name: "Laticínios", icon: Milk },
+  { id: 'Mercearia', name: "Mercearia", icon: ShoppingBasket },
+  { id: 'Temperos', name: "Temperos", icon: Zap },
   { id: 'Bebidas', name: "Bebidas", icon: Coffee },
-  { id: 'Eletrônicos', name: "Eletrônicos", icon: Laptop },
-  { id: 'Outros', name: "Outros", icon: Box }
+  { id: 'Limpeza', name: "Limpeza", icon: Wind },
+  { id: 'Higiene', name: "Higiene", icon: Droplets },
+  { id: 'Pets', name: "Pets", icon: Dog },
+  { id: 'Lazer', name: "Lazer", icon: Gamepad2 },
+  { id: 'Transporte', name: "Transporte", icon: Bus },
+  { id: 'Alimentação', name: "Alimentação", icon: Utensils },
+  { id: 'Compras', name: "Compras", icon: ShoppingBag }
 ];
 
 export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Mercado");
+  const [selectedCategory, setSelectedCategory] = useState("Alimentação");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [amount, setAmount] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -145,7 +156,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
       amount: val,
       type: 'expense',
       date: date.toISOString(),
-      category: cat || 'Mercado',
+      category: cat || 'Alimentação',
       categoryId: 'expense_default',
     }, { merge: true });
   };
@@ -225,13 +236,13 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         <div className="flex items-center justify-between px-1">
           <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300/60">Escolher Categoria</Label>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 px-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={cn(
-                "flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 active:scale-95",
+                "flex flex-col items-center justify-center gap-3 p-4 rounded-3xl border-2 transition-all duration-300 active:scale-95",
                 selectedCategory === cat.id 
                   ? "bg-accent border-accent text-accent-foreground shadow-2xl shadow-accent/20 scale-105" 
                   : "bg-white/5 border-white/5 text-indigo-200/40 hover:bg-white/10 hover:border-white/10"
@@ -243,7 +254,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
               )}>
                 <cat.icon className="h-6 w-6" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-widest">{cat.name}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-center">{cat.name}</span>
             </button>
           ))}
         </div>

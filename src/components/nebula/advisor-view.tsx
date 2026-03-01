@@ -53,14 +53,20 @@ type Tab = 'produtos' | 'estabelecimentos';
 const GUEST_USER_ID = "guest-protocol-v1";
 
 const CATEGORIES = [
-  { name: "Mercado", emoji: "🛒" },
+  { name: "Açougue", emoji: "🥩" },
   { name: "Hortifruti", emoji: "🍎" },
-  { name: "Carnes", emoji: "🥩" },
-  { name: "Higiene", emoji: "🧼" },
-  { name: "Limpeza", emoji: "🧹" },
+  { name: "Padaria", emoji: "🥖" },
+  { name: "Laticínios", emoji: "🥛" },
+  { name: "Mercearia", emoji: "🧺" },
+  { name: "Temperos", emoji: "🌶️" },
   { name: "Bebidas", emoji: "🥤" },
-  { name: "Eletrônicos", emoji: "💻" },
-  { name: "Outros", emoji: "📦" }
+  { name: "Limpeza", emoji: "🧹" },
+  { name: "Higiene", emoji: "🧼" },
+  { name: "Pets", emoji: "🐾" },
+  { name: "Lazer", emoji: "🎡" },
+  { name: "Transporte", emoji: "🚌" },
+  { name: "Alimentação", emoji: "🍽️" },
+  { name: "Compras", emoji: "🛍️" }
 ];
 
 export function AdvisorView() {
@@ -84,7 +90,7 @@ export function AdvisorView() {
   const [formEstId, setFormEstId] = useState("");
   const [formProdName, setFormProdName] = useState("");
   const [formPrice, setFormPrice] = useState("");
-  const [formCategory, setFormCategory] = useState("Outros");
+  const [formCategory, setFormCategory] = useState("Compras");
   const [formDate, setFormDate] = useState<Date | undefined>(new Date());
 
   // Establishment Registration State
@@ -270,7 +276,7 @@ export function AdvisorView() {
     setFormProdName("");
     setFormPrice("");
     setFormEstId("");
-    setFormCategory("Outros");
+    setFormCategory("Compras");
     setFormDate(new Date());
   };
 

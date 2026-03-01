@@ -10,7 +10,7 @@ import { z } from 'genkit';
 const ReceiptItemSchema = z.object({
   name: z.string().describe('Nome do produto conforme aparece na nota.'),
   price: z.number().describe('Preço unitário ou total do item.'),
-  category: z.enum(['Mercado', 'Hortifruti', 'Carnes', 'Higiene', 'Limpeza', 'Bebidas', 'Eletrônicos', 'Outros']).describe('Categoria do produto.'),
+  category: z.enum(['Açougue', 'Hortifruti', 'Padaria', 'Laticínios', 'Mercearia', 'Temperos', 'Bebidas', 'Limpeza', 'Higiene', 'Pets', 'Lazer', 'Transporte', 'Alimentação', 'Compras']).describe('Categoria do produto.'),
 });
 
 const AnalyzeReceiptInputSchema = z.object({
@@ -32,7 +32,7 @@ const analyzeReceiptPrompt = ai.definePrompt({
 Analise a imagem da nota fiscal fornecida e extraia:
 1. O nome do estabelecimento (Supermercado, Loja, etc).
 2. Uma lista de todos os itens comprados, contendo o nome do item e o valor pago.
-3. Classifique cada item em uma das categorias permitidas.
+3. Classifique cada item em uma das categorias permitidas: Açougue, Hortifruti, Padaria, Laticínios, Mercearia, Temperos, Bebidas, Limpeza, Higiene, Pets, Lazer, Transporte, Alimentação, Compras.
 
 Imagem da Nota: {{media url=photoDataUri}}
 
