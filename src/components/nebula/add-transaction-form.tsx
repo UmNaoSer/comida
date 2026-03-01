@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,26 +7,20 @@ import { Label } from "@/components/ui/label";
 import { 
   ShoppingBag, 
   Database, 
-  LayoutPanelLeft, 
   Flame, 
   Search, 
   Camera, 
   Loader2, 
   X, 
   Check, 
-  AlertCircle,
   Utensils,
   Apple,
   Beef,
   Droplets,
   Wind,
   Coffee,
-  Laptop,
-  Box,
-  ChevronRight,
   Plus,
   Store,
-  Sparkles,
   Calendar as CalendarIcon,
   Milk,
   ShoppingBasket,
@@ -37,7 +32,7 @@ import {
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, orderBy, limit } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { analyzeReceipt } from "@/ai/flows/analyze-receipt-flow";
 import { toast } from "@/hooks/use-toast";
@@ -82,6 +77,7 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const [amount, setAmount] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [mounted, setMounted] = useState(false);
 
   // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -92,6 +88,10 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
   const [reviewItems, setReviewItems] = useState<any[]>([]);
   const [reviewEstablishment, setReviewEstablishment] = useState("");
   const [reviewDate, setReviewDate] = useState<Date>(new Date());
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch products
   const productsQuery = useMemoFirebase(() => {
@@ -222,9 +222,10 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
     setIsReviewOpen(false);
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="space-y-12 pb-20 animate-in fade-in duration-700">
-      {/* Visual Header / Action Area */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="space-y-1 w-full sm:w-auto">
           <h2 className="text-3xl font-black uppercase tracking-tighter italic flex items-center gap-3">
@@ -243,7 +244,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </Button>
       </div>
 
-      {/* Category Section - Modern Grid */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
           <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300/60">Escolher Categoria</Label>
@@ -272,7 +272,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </div>
       </div>
 
-      {/* Product Selection Area - Robust Grid */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
           <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-300/60">Produtos Disponíveis</Label>
@@ -356,8 +355,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                       )}
                     </div>
                   </div>
-                  
-                  {/* Subtle Background Icon */}
                   <div className="absolute -right-8 -bottom-8 p-12 opacity-[0.03] group-hover:opacity-[0.08] transition-all group-hover:scale-110 pointer-events-none">
                     <Database className="h-32 w-32 text-accent" />
                   </div>
@@ -368,7 +365,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </div>
       </div>
 
-      {/* Confirmation Area - Floating Footer */}
       {selectedProduct && (
         <div className="fixed bottom-32 left-0 right-0 z-50 px-4 sm:px-6 animate-in slide-in-from-bottom-10 duration-500">
           <div className="max-w-4xl mx-auto bg-card/90 backdrop-blur-2xl border-2 border-accent/20 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col items-stretch gap-6 sm:gap-8">
@@ -452,7 +448,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </div>
       )}
 
-      {/* Camera UI */}
       {isCameraOpen && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-6 animate-in fade-in">
           <button onClick={() => setIsCameraOpen(false)} className="absolute top-8 right-8 text-white/50 hover:text-white p-2">
@@ -479,7 +474,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
         </div>
       )}
 
-      {/* Review Dialog */}
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
         <DialogContent className="max-w-2xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2.5rem] sm:rounded-[3rem] p-0 overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
           <DialogHeader className="p-8 sm:p-10 pb-6 bg-gradient-to-br from-indigo-950/40 to-transparent flex-shrink-0">
@@ -491,7 +485,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
 
           <ScrollArea className="flex-grow px-6 sm:px-10 py-4">
             <div className="space-y-8">
-              {/* Header Info: Establishment & Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/[0.03] p-6 rounded-[2rem] border border-white/5">
                 <div className="space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Estabelecimento</Label>
@@ -523,7 +516,6 @@ export function AddTransactionForm({ userId }: AddTransactionFormProps) {
                 </div>
               </div>
 
-              {/* Items List */}
               <div className="space-y-4">
                 <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-300/60 ml-1">Itens Extraídos ({reviewItems.length})</Label>
                 <div className="grid gap-4">

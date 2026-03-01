@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,9 +17,6 @@ import {
   Trophy, 
   Store, 
   LayoutPanelLeft, 
-  Flame, 
-  ShoppingBag, 
-  History, 
   Trash2, 
   Plus, 
   Calendar as CalendarIcon, 
@@ -27,7 +25,8 @@ import {
   Loader2, 
   X,
   Check,
-  Edit2
+  Edit2,
+  History
 } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, query, orderBy } from "firebase/firestore";
@@ -74,6 +73,7 @@ export function AdvisorView() {
   const [activeTab, setActiveTab] = useState<Tab>('produtos');
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("todas");
+  const [mounted, setMounted] = useState(false);
   
   // Camera & AI State
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -91,10 +91,15 @@ export function AdvisorView() {
   const [formProdName, setFormProdName] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formCategory, setFormCategory] = useState("Compras");
-  const [formDate, setFormDate] = useState<Date | undefined>(new Date());
+  const [formDate, setFormDate] = useState<Date | undefined>(undefined);
 
   // Establishment Registration State
   const [newEstName, setNewEstName] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+    setFormDate(new Date());
+  }, []);
 
   // Firestore Data
   const estQuery = useMemoFirebase(() => {
@@ -171,7 +176,6 @@ export function AdvisorView() {
   const handleConfirmReview = () => {
     if (!reviewData || !db) return;
 
-    // 1. Process Establishment
     let storeId = "";
     const existingEst = establishments?.find(e => e.name.toLowerCase() === reviewData.establishmentName.toLowerCase());
     
@@ -188,7 +192,6 @@ export function AdvisorView() {
       }, { merge: true });
     }
 
-    // 2. Process Items
     for (const item of reviewData.items) {
       const normalizedName = item.name.trim().toLowerCase();
       const existingProduct = products?.find(p => p.name.toLowerCase() === normalizedName);
@@ -310,6 +313,8 @@ export function AdvisorView() {
     });
   };
 
+  if (!mounted) return null;
+
   const groupedProducts: any[] = [];
   const processedNames = new Set<string>();
 
@@ -412,7 +417,6 @@ export function AdvisorView() {
         </div>
       )}
 
-      {/* Review Dialog */}
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
         <DialogContent className="max-w-3xl bg-[#1a1b2e] border-indigo-500/20 text-white rounded-[2rem] p-0 overflow-hidden">
           <DialogHeader className="p-8 pb-4">
@@ -519,14 +523,12 @@ export function AdvisorView() {
             <div className="absolute top-0 right-0 p-8 opacity-[0.02] hidden sm:block">
               <LayoutPanelLeft className="h-32 w-32 text-accent" />
             </div>
-            
             <div className="flex items-center justify-between mb-6 sm:mb-8">
               <h3 className="text-lg sm:text-xl font-headline font-black text-accent italic uppercase tracking-tighter flex items-center gap-3">
                 <Plus className="h-5 w-5" />
                 Adicionar Produto
               </h3>
             </div>
-            
             <form onSubmit={handleSaveProduct} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
@@ -539,13 +541,9 @@ export function AdvisorView() {
                       {establishments?.map(est => (
                         <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
                       ))}
-                      {(!establishments || establishments.length === 0) && (
-                        <SelectItem value="none" disabled>Nenhuma loja cadastrada</SelectItem>
-                      )}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Produto</label>
                   <Input
@@ -555,7 +553,6 @@ export function AdvisorView() {
                     className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 placeholder:text-indigo-100/20 focus:border-accent/40 transition-all"
                   />
                 </div>
-
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Preço (R$)</label>
                   <Input
@@ -567,7 +564,6 @@ export function AdvisorView() {
                     className="bg-[#121321] border-indigo-500/20 h-12 rounded-xl text-indigo-100 focus:border-accent/40 transition-all"
                   />
                 </div>
-
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Categoria</label>
                   <Select value={formCategory} onValueChange={setFormCategory}>
@@ -671,8 +667,6 @@ export function AdvisorView() {
             ) : (
               groupedProducts.map((product) => {
                 const productEntries = allEntries?.filter(e => product.relatedIds.includes(e.productId)) || [];
-                
-                // Logic: Analyze each store's most recent entry and pick the lowest price among them.
                 let bestEntryOverall = null;
                 
                 if (productEntries.length > 0) {

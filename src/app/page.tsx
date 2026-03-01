@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { SummaryCards } from "@/components/nebula/summary-cards";
@@ -10,7 +10,7 @@ import { FlowChart } from "@/components/nebula/flow-chart";
 import { AIInsights } from "@/components/nebula/ai-insights";
 import { AdvisorView } from "@/components/nebula/advisor-view";
 import { AddTransactionForm } from "@/components/nebula/add-transaction-form";
-import { LayoutDashboard, History, Loader2, Search, ArrowRight, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
+import { LayoutDashboard, History, Loader2, Search, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getYear, getMonth } from "date-fns";
@@ -39,9 +39,19 @@ const MONTHS = [
 export default function NebulaFinanx() {
   const db = useFirestore();
   const [view, setView] = useState<View>('dashboard');
-  const [selectedYear, setSelectedYear] = useState<string>(getYear(new Date()).toString());
-  const [selectedMonth, setSelectedMonth] = useState<string>(getMonth(new Date()).toString());
+  const [mounted, setMounted] = useState(false);
+  
+  // Hydration safe state initialization
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [isAllMonthTxsOpen, setIsAllMonthTxsOpen] = useState(false);
+
+  useEffect(() => {
+    const now = new Date();
+    setSelectedYear(getYear(now).toString());
+    setSelectedMonth(getMonth(now).toString());
+    setMounted(true);
+  }, []);
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -53,7 +63,7 @@ export default function NebulaFinanx() {
 
   const { data: transactions, isLoading: isTxLoading } = useCollection(transactionsQuery);
 
-  if (isTxLoading && !transactions) {
+  if (!mounted || (isTxLoading && !transactions)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 text-accent animate-spin" />
@@ -63,13 +73,11 @@ export default function NebulaFinanx() {
 
   const txs = transactions || [];
   
-  // Filter transactions by selected year for summary cards
   const filteredYearTxs = txs.filter(t => {
     const txYear = getYear(new Date(t.date)).toString();
     return txYear === selectedYear;
   });
 
-  // Filter transactions for the selected month and year
   const monthTxs = txs.filter(t => {
     const d = new Date(t.date);
     return d.getFullYear().toString() === selectedYear && d.getMonth().toString() === selectedMonth;
@@ -79,11 +87,9 @@ export default function NebulaFinanx() {
   const totalExpenses = filteredYearTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const totalBalance = totalIncome - totalExpenses;
 
-  // Accurate Monthly Average: Divide year total by number of months with entries in that year
   const monthsWithEntries = new Set(filteredYearTxs.map(t => new Date(t.date).getMonth())).size;
   const monthlyAverage = monthsWithEntries > 0 ? totalBalance / monthsWithEntries : 0;
 
-  // Recent transactions for the dashboard (global top 5)
   const recentTxs = txs.slice(0, 5);
 
   const currentYear = getYear(new Date());
@@ -91,7 +97,6 @@ export default function NebulaFinanx() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-headline">
-      {/* Header */}
       <header className="container mx-auto px-6 h-24 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
@@ -99,11 +104,9 @@ export default function NebulaFinanx() {
             <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] -mt-1">Gestão Financeira</span>
           </div>
         </div>
-        
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-lg shadow-indigo-500/20 border border-white/10" />
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 container mx-auto px-6 max-w-5xl pb-32">
         {view === 'dashboard' && (
           <div className="space-y-10 animate-in fade-in duration-500">
@@ -136,7 +139,6 @@ export default function NebulaFinanx() {
 
             <AIInsights transactions={txs} />
 
-            {/* Lançamentos Section */}
             <Card className="bg-indigo-950/10 border-indigo-500/10 rounded-[2rem] overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.05)]">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
                 <div className="space-y-1">
@@ -218,7 +220,6 @@ export default function NebulaFinanx() {
               <h2 className="text-3xl font-bold uppercase tracking-tight italic">Finanças</h2>
               <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em]">Registrar Compra</p>
             </div>
-            
             <AddTransactionForm userId={GUEST_USER_ID} />
           </div>
         )}
@@ -230,7 +231,6 @@ export default function NebulaFinanx() {
         )}
       </main>
 
-      {/* Navigation Dock */}
       <nav className="fixed bottom-0 left-0 right-0 h-24 bg-background/80 backdrop-blur-xl border-t border-white/5 z-50">
         <div className="container mx-auto px-10 h-full flex items-center justify-around max-w-2xl">
           <NavButton 
