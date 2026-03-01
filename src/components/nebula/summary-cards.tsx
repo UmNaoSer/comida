@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -20,7 +21,9 @@ export function SummaryCards({ balance, income, expenses }: SummaryCardsProps) {
 
   const formatCurrency = (val: number) => {
     if (!isMounted) return "0,00";
-    return val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    // Usamos Math.abs para garantir que os valores sejam exibidos sem o sinal de negativo,
+    // conforme solicitado pelo usuário para uma visão de volume financeiro.
+    return Math.abs(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
   };
 
   return (
